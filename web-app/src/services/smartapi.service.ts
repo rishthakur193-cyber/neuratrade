@@ -90,6 +90,21 @@ export class SmartApiService {
         quantity: number,
         price: number
     }) {
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // STAGING SAFETY GUARD — DO NOT REMOVE
+        // Real order execution is disabled unless
+        // ENABLE_REAL_TRADING=true is set explicitly.
+        // This prevents accidental live trades in staging/dev.
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        if (process.env.ENABLE_REAL_TRADING !== 'true') {
+            console.warn('[STAGING GUARD] Real trading is disabled. Returning simulated order.');
+            return {
+                orderid: `SIMULATED_${Date.now()}`,
+                status: 'SIMULATED',
+                message: 'Order execution disabled in staging mode. Set ENABLE_REAL_TRADING=true to enable.'
+            };
+        }
+
         try {
             const response = await fetch(`${this.BASE_URL}/rest/auth/angelbroking/order/v1/placeOrder`, {
                 method: 'POST',
@@ -103,7 +118,7 @@ export class SmartApiService {
                 },
                 body: JSON.stringify({
                     variety: 'NORMAL',
-                    tradingsymbol: orderDetails.symboltoken, // Usually needs symbol name from lookup
+                    tradingsymbol: orderDetails.symboltoken,
                     symboltoken: orderDetails.symboltoken,
                     transactiontype: orderDetails.transactiontype,
                     exchange: orderDetails.exchange,
@@ -117,7 +132,7 @@ export class SmartApiService {
 
             const data = await response.json();
             if (!data.status) throw new Error(data.message || 'Order placement failed');
-            return data.data; // Order ID
+            return data.data;
         } catch (error: any) {
             console.error('Order Execution Error:', error);
             throw new Error(error.message || 'Failed to place order via Broker API');
