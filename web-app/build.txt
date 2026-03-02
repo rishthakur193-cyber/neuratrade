@@ -1,0 +1,130 @@
+﻿src/app/admin/dashboard/page.tsx(43,49): error TS1127: Invalid character.
+src/app/admin/dashboard/page.tsx(43,50): error TS1136: Property assignment expected.
+src/app/admin/dashboard/page.tsx(202,58): error TS1005: ',' expected.
+src/app/admin/dashboard/page.tsx(202,59): error TS1005: ',' expected.
+src/app/admin/dashboard/page.tsx(202,63): error TS1005: ',' expected.
+src/app/admin/dashboard/page.tsx(202,76): error TS1005: ',' expected.
+src/app/admin/dashboard/page.tsx(202,91): error TS1005: ',' expected.
+src/app/admin/dashboard/page.tsx(202,92): error TS1005: ',' expected.
+src/app/admin/dashboard/page.tsx(202,99): error TS1005: ',' expected.
+src/app/admin/dashboard/page.tsx(202,181): error TS1005: ',' expected.
+src/app/admin/dashboard/page.tsx(204,59): error TS1005: ',' expected.
+src/app/admin/dashboard/page.tsx(204,69): error TS1351: An identifier or keyword cannot immediately follow a numeric literal.
+src/app/admin/dashboard/page.tsx(204,73): error TS1005: ',' expected.
+src/app/admin/dashboard/page.tsx(204,85): error TS1005: ',' expected.
+src/app/admin/dashboard/page.tsx(204,95): error TS1005: ',' expected.
+src/app/admin/dashboard/page.tsx(204,113): error TS1005: ',' expected.
+src/app/admin/dashboard/page.tsx(204,114): error TS1005: ',' expected.
+src/app/admin/dashboard/page.tsx(204,121): error TS1005: ',' expected.
+src/app/admin/dashboard/page.tsx(226,59): error TS1005: ',' expected.
+src/app/admin/dashboard/page.tsx(226,66): error TS1005: ',' expected.
+src/app/admin/dashboard/page.tsx(226,75): error TS1005: ',' expected.
+src/app/admin/dashboard/page.tsx(226,88): error TS1005: ',' expected.
+src/app/admin/dashboard/page.tsx(226,98): error TS1005: ',' expected.
+src/app/admin/dashboard/page.tsx(226,110): error TS1005: ',' expected.
+src/app/admin/dashboard/page.tsx(226,127): error TS1005: ',' expected.
+src/app/admin/dashboard/page.tsx(226,144): error TS1005: ',' expected.
+src/app/admin/dashboard/page.tsx(226,145): error TS1005: ',' expected.
+src/app/admin/dashboard/page.tsx(226,149): error TS1005: ',' expected.
+src/app/admin/dashboard/page.tsx(226,231): error TS1005: ',' expected.
+src/app/admin/dashboard/page.tsx(226,232): error TS1472: 'catch' or 'finally' expected.
+src/app/admin/dashboard/page.tsx(234,167): error TS1005: ';' expected.
+src/app/admin/dashboard/page.tsx(234,173): error TS1109: Expression expected.
+src/app/admin/dashboard/page.tsx(249,26): error TS1005: ';' expected.
+src/app/admin/dashboard/page.tsx(249,46): error TS1005: ';' expected.
+src/app/admin/dashboard/page.tsx(249,64): error TS1005: ';' expected.
+src/app/admin/dashboard/page.tsx(249,71): error TS1005: ';' expected.
+src/app/admin/dashboard/page.tsx(249,78): error TS1005: ';' expected.
+src/app/admin/dashboard/page.tsx(249,91): error TS1005: ';' expected.
+src/app/admin/dashboard/page.tsx(249,108): error TS1005: ';' expected.
+src/app/admin/dashboard/page.tsx(249,125): error TS1005: ';' expected.
+src/app/admin/dashboard/page.tsx(257,35): error TS1005: ';' expected.
+src/app/admin/dashboard/page.tsx(257,44): error TS1005: ';' expected.
+src/app/admin/dashboard/page.tsx(257,53): error TS1005: ';' expected.
+src/app/admin/dashboard/page.tsx(257,70): error TS1351: An identifier or keyword cannot immediately follow a numeric literal.
+src/app/admin/dashboard/page.tsx(257,74): error TS1005: ';' expected.
+src/app/admin/dashboard/page.tsx(257,87): error TS1005: ';' expected.
+src/app/admin/dashboard/page.tsx(264,1): error TS1160: Unterminated template literal.
+src/app/advisor/dashboard/page.tsx(56,49): error TS1127: Invalid character.
+src/app/advisor/dashboard/page.tsx(56,50): error TS1136: Property assignment expected.
+src/app/advisor/dashboard/page.tsx(159,46): error TS1005: ',' expected.
+src/app/advisor/dashboard/page.tsx(159,47): error TS1005: ',' expected.
+src/app/advisor/dashboard/page.tsx(159,51): error TS1005: ',' expected.
+src/app/advisor/dashboard/page.tsx(159,59): error TS1005: ',' expected.
+src/app/advisor/dashboard/page.tsx(159,77): error TS1005: ',' expected.
+src/app/advisor/dashboard/page.tsx(177,46): error TS1005: ',' expected.
+src/app/advisor/dashboard/page.tsx(177,52): error TS1005: ',' expected.
+src/app/advisor/dashboard/page.tsx(177,60): error TS1005: ',' expected.
+src/app/advisor/dashboard/page.tsx(177,78): error TS1005: ',' expected.
+src/app/advisor/dashboard/page.tsx(195,46): error TS1005: ',' expected.
+src/app/advisor/dashboard/page.tsx(195,52): error TS1005: ',' expected.
+src/app/advisor/dashboard/page.tsx(195,60): error TS1005: ',' expected.
+src/app/advisor/dashboard/page.tsx(195,78): error TS1005: ',' expected.
+src/app/advisor/dashboard/page.tsx(213,46): error TS1005: ',' expected.
+src/app/advisor/dashboard/page.tsx(213,52): error TS1005: ',' expected.
+src/app/advisor/dashboard/page.tsx(213,60): error TS1005: ',' expected.
+src/app/advisor/dashboard/page.tsx(213,78): error TS1005: ',' expected.
+src/app/advisor/dashboard/page.tsx(234,63): error TS1005: ',' expected.
+src/app/advisor/dashboard/page.tsx(234,70): error TS1005: ',' expected.
+src/app/advisor/dashboard/page.tsx(234,77): error TS1005: ',' expected.
+src/app/advisor/dashboard/page.tsx(234,90): error TS1005: ',' expected.
+src/app/advisor/dashboard/page.tsx(234,100): error TS1351: An identifier or keyword cannot immediately follow a numeric literal.
+src/app/advisor/dashboard/page.tsx(234,104): error TS1005: ',' expected.
+src/app/advisor/dashboard/page.tsx(234,116): error TS1005: ',' expected.
+src/app/advisor/dashboard/page.tsx(234,133): error TS1005: ',' expected.
+src/app/advisor/dashboard/page.tsx(234,150): error TS1005: ',' expected.
+src/app/advisor/dashboard/page.tsx(234,151): error TS1005: ',' expected.
+src/app/advisor/dashboard/page.tsx(234,155): error TS1005: ',' expected.
+src/app/advisor/dashboard/page.tsx(234,258): error TS1005: ',' expected.
+src/app/advisor/dashboard/page.tsx(234,259): error TS1472: 'catch' or 'finally' expected.
+src/app/advisor/dashboard/page.tsx(354,26): error TS1005: ';' expected.
+src/app/advisor/dashboard/page.tsx(354,46): error TS1005: ';' expected.
+src/app/advisor/dashboard/page.tsx(354,54): error TS1005: ';' expected.
+src/app/advisor/dashboard/page.tsx(354,61): error TS1005: ';' expected.
+src/app/advisor/dashboard/page.tsx(354,68): error TS1005: ';' expected.
+src/app/advisor/dashboard/page.tsx(354,81): error TS1005: ';' expected.
+src/app/advisor/dashboard/page.tsx(354,98): error TS1005: ';' expected.
+src/app/advisor/dashboard/page.tsx(354,115): error TS1005: ';' expected.
+src/app/advisor/dashboard/page.tsx(362,1): error TS1160: Unterminated template literal.
+src/app/dashboard/page.tsx(46,49): error TS1127: Invalid character.
+src/app/dashboard/page.tsx(46,50): error TS1136: Property assignment expected.
+src/app/dashboard/page.tsx(238,26): error TS1005: ',' expected.
+src/app/dashboard/page.tsx(238,31): error TS1005: ',' expected.
+src/app/dashboard/page.tsx(238,37): error TS1005: ',' expected.
+src/app/dashboard/page.tsx(238,46): error TS1005: ',' expected.
+src/app/dashboard/page.tsx(238,54): error TS1005: ',' expected.
+src/app/dashboard/page.tsx(238,61): error TS1005: ',' expected.
+src/app/dashboard/page.tsx(238,68): error TS1005: ',' expected.
+src/app/dashboard/page.tsx(238,81): error TS1005: ',' expected.
+src/app/dashboard/page.tsx(238,98): error TS1005: ',' expected.
+src/app/dashboard/page.tsx(238,115): error TS1005: ',' expected.
+src/app/dashboard/page.tsx(238,116): error TS1005: ',' expected.
+src/app/dashboard/page.tsx(239,29): error TS1005: ',' expected.
+src/app/dashboard/page.tsx(246,1): error TS1160: Unterminated template literal.
+src/app/investor/analytics/page.tsx(34,49): error TS1127: Invalid character.
+src/app/investor/analytics/page.tsx(34,50): error TS1136: Property assignment expected.
+src/app/investor/analytics/page.tsx(118,52): error TS1005: ',' expected.
+src/app/investor/analytics/page.tsx(118,56): error TS1005: ',' expected.
+src/app/investor/analytics/page.tsx(118,59): error TS1351: An identifier or keyword cannot immediately follow a numeric literal.
+src/app/investor/analytics/page.tsx(118,62): error TS1005: ',' expected.
+src/app/investor/analytics/page.tsx(118,74): error TS1005: ',' expected.
+src/app/investor/analytics/page.tsx(118,75): error TS1005: ',' expected.
+src/app/investor/analytics/page.tsx(118,94): error TS1139: Type parameter declaration expected.
+src/app/investor/analytics/page.tsx(118,97): error TS1005: ':' expected.
+src/app/investor/analytics/page.tsx(118,110): error TS1005: ',' expected.
+src/app/investor/analytics/page.tsx(118,126): error TS1005: ':' expected.
+src/app/investor/analytics/page.tsx(268,1): error TS1160: Unterminated template literal.
+src/app/trainee/dashboard/page.tsx(69,49): error TS1127: Invalid character.
+src/app/trainee/dashboard/page.tsx(69,50): error TS1136: Property assignment expected.
+src/app/trainee/dashboard/page.tsx(274,1): error TS1160: Unterminated template literal.
+src/services/ai.service.ts(12,35): error TS1127: Invalid character.
+src/services/ai.service.ts(12,36): error TS1134: Variable declaration expected.
+src/services/ai.service.ts(42,1): error TS1005: '}' expected.
+src/services/ai.service.ts(42,1): error TS1160: Unterminated template literal.
+src/services/matching.service.ts(51,33): error TS1127: Invalid character.
+src/services/matching.service.ts(51,34): error TS1136: Property assignment expected.
+src/services/matching.service.ts(59,1): error TS1160: Unterminated template literal.
+src/services/payment.service.ts(11,25): error TS1127: Invalid character.
+src/services/payment.service.ts(11,26): error TS1134: Variable declaration expected.
+src/services/payment.service.ts(35,1): error TS1005: '}' expected.
+src/services/payment.service.ts(35,1): error TS1160: Unterminated template literal.

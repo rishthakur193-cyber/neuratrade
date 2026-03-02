@@ -1,0 +1,19 @@
+{
+  "working": [
+    "Mobile Responsiveness (CSS Media Queries active)"
+  ],
+  "failing": [
+    "User Registration Flow",
+    "Login Flow & Dashboard Redirect",
+    "KYC Protocol Initialization UI/API"
+  ],
+  "mocked": [
+    "KYC document upload strictly mocks ID transfer, actual file binary not sent.",
+    "Order Execution simulates placement to DB, real Zerodha/AngelOne execution bypass via DEV env wrapper.",
+    "Transaction ledger on Dashboard hardcodes historical transactions."
+  ],
+  "consoleLogs": [],
+  "networkErrors": [],
+  "dbReality": "Database failed to create user or redirect properly. KYC endpoint failed. ",
+  "mobileTest": "Pass: Sidebar hides on mobile viewport appropriately."
+}

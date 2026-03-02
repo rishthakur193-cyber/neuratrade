@@ -1,0 +1,73 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADVISOR
+  ADMIN
+}
+
+enum AdvisorStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+  SUSPENDED
+}
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  password      String
+  fullName      String
+  role          Role     @default(USER)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Profile data
+  phone         String?
+  avatarUrl     String?
+  
+  // Relations
+  advisorProfile AdvisorProfile?
+  investments    Investment[]
+}
+
+model AdvisorProfile {
+  id                String        @id @default(uuid())
+  userId            String        @unique
+  user              User          @relation(fields: [userId], references: [id])
+  
+  sebiRegNo         String        @unique
+  specialization    String[]
+  bio               String?
+  experienceYears   Int
+  status            AdvisorStatus @default(PENDING)
+  
+  // Performance Metrics
+  sharpeRatio       Float?
+  aum               Float?        // in INR Cr
+  threeYearReturns  Float?
+  
+  // Relations
+  clients           Investment[]
+  verifiedAt        DateTime?
+}
+
+model Investment {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  advisorId   String
+  advisor     AdvisorProfile @relation(fields: [advisorId], references: [id])
+  
+  amount      Float
+  status      String   // e.g., ACTIVE, CLOSED
+  startDate   DateTime @default(now())
+  endDate     DateTime?
+}

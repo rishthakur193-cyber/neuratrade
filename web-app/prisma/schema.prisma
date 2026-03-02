@@ -1,0 +1,140 @@
+generator client {
+  provider = "prisma-client-js"
+  engineType = "binary"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enum defining the 4 core platform roles
+enum Role {
+  INVESTOR
+  ADVISOR
+  TRAINEE
+  ADMIN
+}
+
+// Enum defining KYC compliance statuses
+enum KycStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+// Core User Account
+model User {
+  id            String    @id @default(uuid())
+  name          String
+  email         String    @unique
+  passwordHash  String
+  role          Role      @default(INVESTOR)
+  kycStatus     KycStatus @default(PENDING)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Role-specific Profiles (One-to-One relations)
+  investorProfile InvestorProfile?
+  advisorProfile  AdvisorProfile?
+  traineeProfile  TraineeProfile?
+
+  // Relations
+  portfolios      Portfolio[]
+  messagesSent    Message[]   @relation("Sender")
+  messagesRcvd    Message[]   @relation("Receiver")
+}
+
+// Profile for Investors
+model InvestorProfile {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  riskTolerance   String   @default("Moderate") // Low, Moderate, High
+  totalInvested   Float    @default(0.0)
+  currentValue    Float    @default(0.0)
+  
+  // An investor can follow multiple strategies/advisors
+  portfolios      Portfolio[]
+}
+
+// Profile for SEBI Registered Advisors
+model AdvisorProfile {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  sebiRegNo       String   @unique
+  tier            String   @default("Registered") // Registered, Gold, Elite
+  aumManaged      Float    @default(0.0)
+  alphaGenerated  Float    @default(0.0)
+  rating          Float    @default(0.0)
+  isVerified      Boolean  @default(false)
+  
+  // An advisor can create multiple strategies
+  strategies      Strategy[]
+}
+
+// Profile for Aspiring Advisors (90-Day Journey)
+model TraineeProfile {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  nismProgress    Int      @default(0) // Percentage 0-100
+  milestonesDone  Int      @default(0)
+  mentorId        String?  // ID of the advisor mentoring them
+}
+
+// Investment Strategy / Portfolio Model created by Advisors
+model Strategy {
+  id              String   @id @default(uuid())
+  advisorId       String
+  advisor         AdvisorProfile @relation(fields: [advisorId], references: [id], onDelete: Cascade)
+  
+  name            String
+  type            String   // Algorithmic, Advisor-Led, Passive Index
+  riskLevel       String   // Low, Medium, High
+  cagr            Float
+  minInvestment   Float
+  description     String
+  tags            String[]
+  isActive        Boolean  @default(true)
+  
+  createdAt       DateTime @default(now())
+  
+  // Investors subscribed to this strategy
+  portfolios      Portfolio[]
+}
+
+// Mapping of Investor investments into Strategies
+model Portfolio {
+  id              String   @id @default(uuid())
+  investorId      String
+  investor        InvestorProfile @relation(fields: [investorId], references: [id], onDelete: Cascade)
+  
+  strategyId      String
+  strategy        Strategy @relation(fields: [strategyId], references: [id], onDelete: Restrict)
+  userId          String?
+  user            User?    @relation(fields: [userId], references: [id])
+  
+  investedAmount  Float
+  currentValue    Float
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// Communication Hub Messages
+model Message {
+  id              String   @id @default(uuid())
+  senderId        String
+  sender          User     @relation("Sender", fields: [senderId], references: [id])
+  
+  receiverId      String
+  receiver        User     @relation("Receiver", fields: [receiverId], references: [id])
+  
+  content         String
+  isAiSummary     Boolean  @default(false) // Flags if this is an AI genned meeting notes
+  createdAt       DateTime @default(now())
+}

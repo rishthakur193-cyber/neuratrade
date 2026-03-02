@@ -1,0 +1,22 @@
+{
+  "name": "ecosystem-of-smart-investing",
+  "version": "1.0.0",
+  "description": "Full-Stack AI-Powered Investment Advisory Ecosystem",
+  "scripts": {
+    "dev": "concurrently \"npm run dev --prefix web-app\" \"npm run dev --prefix server\"",
+    "install-all": "npm install --prefix web-app && npm install --prefix server",
+    "build": "npm run build --prefix web-app && npm run build --prefix server",
+    "start": "concurrently \"npm run start --prefix web-app\" \"npm run start --prefix server\""
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^25.3.3",
+    "concurrently": "^8.2.2",
+    "prisma": "^6.4.1",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.9.3"
+  }
+}
