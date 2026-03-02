@@ -25,24 +25,30 @@ enum KycStatus {
 
 // Core User Account
 model User {
-  id            String    @id @default(uuid())
-  name          String
-  email         String    @unique
-  passwordHash  String
-  role          Role      @default(INVESTOR)
-  kycStatus     KycStatus @default(PENDING)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                String    @id @default(uuid())
+  name              String
+  email             String    @unique
+  passwordHash      String
+  role              Role      @default(INVESTOR)
+  kycStatus         KycStatus @default(PENDING)
+  kycDocuments      String[]  @default([])  // GCS paths or local file paths
+  twoFactorEnabled  Boolean   @default(false)
+  twoFactorSecret   String?                 // TOTP secret (encrypted at rest ideally)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
-  // Role-specific Profiles (One-to-One relations)
-  investorProfile InvestorProfile?
-  advisorProfile  AdvisorProfile?
-  traineeProfile  TraineeProfile?
+  // Role-specific Profiles
+  investorProfile   InvestorProfile?
+  advisorProfile    AdvisorProfile?
+  traineeProfile    TraineeProfile?
 
   // Relations
-  portfolios      Portfolio[]
-  messagesSent    Message[]   @relation("Sender")
-  messagesRcvd    Message[]   @relation("Receiver")
+  portfolios        Portfolio[]
+  messagesSent      Message[]   @relation("Sender")
+  messagesRcvd      Message[]   @relation("Receiver")
+  auditLogs         AuditLog[]
+  courseProgress    CourseProgress[]
+  conversations     ConversationParticipant[]
 }
 
 // Profile for Investors
@@ -135,6 +141,45 @@ model Message {
   receiver        User     @relation("Receiver", fields: [receiverId], references: [id])
   
   content         String
-  isAiSummary     Boolean  @default(false) // Flags if this is an AI genned meeting notes
+  isAiSummary     Boolean  @default(false)
   createdAt       DateTime @default(now())
+}
+
+// Audit Log — all sensitive user actions
+model AuditLog {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action      String
+  details     String?  // JSON stringified payload
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+}
+
+// Conversation threads for in-app messaging
+model Conversation {
+  id              String                   @id @default(uuid())
+  participants    ConversationParticipant[]
+  lastMessageAt   DateTime                 @default(now())
+  createdAt       DateTime                 @default(now())
+}
+
+model ConversationParticipant {
+  conversationId  String
+  conversation    Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@id([conversationId, userId])
+}
+
+// Trainee Education Progress
+model CourseProgress {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId      String
+  progress      Float    @default(0)
+  lastAccessed  DateTime @default(now())
+  @@unique([userId, courseId])
 }

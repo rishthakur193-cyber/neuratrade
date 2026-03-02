@@ -98,7 +98,40 @@ async function main() {
         }
     })
 
+    // 6. Create Trainee
+    const traineeUser = await prisma.user.create({
+        data: {
+            name: 'Priya Trainee',
+            email: 'trainee@quantelite.com',
+            passwordHash: defaultPassword,
+            role: 'TRAINEE',
+            kycStatus: 'PENDING',
+            traineeProfile: {
+                create: {
+                    nismProgress: 42,
+                    milestonesDone: 3,
+                    mentorId: advisorUser.advisorProfile!.id,
+                }
+            }
+        },
+        include: { traineeProfile: true }
+    })
+
+    // 7. Create CourseProgress for Trainee
+    await prisma.courseProgress.create({
+        data: {
+            userId: traineeUser.id,
+            courseId: 'NISM_SERIES_V_A',
+            progress: 42.5,
+        }
+    })
+
     console.log('Seed Payload Inject Complete! ✨')
+    console.log('  ↳ Admin:', admin.email)
+    console.log('  ↳ Advisor:', advisorUser.email)
+    console.log('  ↳ Investor:', investorUser.email)
+    console.log('  ↳ Trainee:', traineeUser.email)
+    console.log('  ↳ Default password for all: password123')
 }
 
 main()
