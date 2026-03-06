@@ -48,7 +48,7 @@ steps:
     args:
       - '-c'
       - |
-        URL=$$(gcloud run services describe neuratrade-api --region asia-south1 --format='value(status.url)')
+          URL=$$(gcloud run services describe neuratrade-api --region asia-south1 --format='value(status.url)')
         echo "Verifying deployment at $$URL"
         for path in "/health" "/advisor/list" "/investor/dashboard" "/signal/feed"; do
  t$s=$(curl -s -o /dev/null -w "%{http_code}" "$URL$path")
