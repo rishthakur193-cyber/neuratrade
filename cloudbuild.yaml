@@ -67,6 +67,9 @@ steps:
 
 images:
   - 'asia-south1-docker.pkg.dev/$PROJECT_ID/neuratrade-repo/neuratrade-api:$COMMIT_SHA'
+<<<<<<< HEAD
 
+=======
+>>>>>>> 4b95012 (Add logging options to cloudbuild.yaml)
 options:
   logging: CLOUD_LOGGING_ONLY
