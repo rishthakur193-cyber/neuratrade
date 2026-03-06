@@ -1,29 +1,54 @@
 steps:
-- name: 'gcr.io/cloud-builders/docker'
-  args: ['build', '-t', 'asia-south1-docker.pkg.dev/$PROJECT_ID/neuratrade-repo/neuratrade-api:$COMMIT_SHA', '.']
+  # Stage 1: Build backend container
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'build', 
+      '-t', 'asia-south1-docker.pkg.dev/$PROJECT_ID/neuratrade-repo/neuratrade-api:$COMMIT_SHA',
+      '-t', 'asia-south1-docker.pkg.dev/$PROJECT_ID/neuratrade-repo/neuratrade-api:latest',
+      '-f', 'server/Dockerfile', 
+      'server'
+    ]
+  
+  # Stage 2: Push container to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'asia-south1-docker.pkg.dev/$PROJECT_ID/neuratrade-repo/neuratrade-api:$COMMIT_SHA']
+  
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'asia-south1-docker.pkg.dev/$PROJECT_ID/neuratrade-repo/neuratrade-api:latest']
+  
+  # Stage 3: Deploy container to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'neuratrade-api'
+      - '--image'
+      - 'asia-south1-docker.pkg.dev/$PROJECT_ID/neuratrade-repo/neuratrade-api:$COMMIT_SHA'
+      - '--region'
+      - 'asia-south1'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+      - '--memory'
+      - '512Mi'
+      - '--max-instances'
+      - '20'
+      - '--set-env-vars'
+      - 'DATABASE_URL=$_DATABASE_URL,JWT_SECRET=$_JWT_SECRET,NEXT_PUBLIC_API_URL=$_NEXT_PUBLIC_API_URL'
 
-- name: 'gcr.io/cloud-builders/docker'
-  args: ['push', 'asia-south1-docker.pkg.dev/$PROJECT_ID/neuratrade-repo/neuratrade-api:$COMMIT_SHA']
-
-<<<<<<< HEAD
-  # Stage 5: Verification Task (Escaped shell variables with $$)
+  # Stage 4: Verification Task (Escaped shell variables with $$)
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: 'bash'
     args:
       - '-c'
       - |
-          URL=$$(gcloud run services describe neuratrade-api --region asia-south1 --format='value(status.url)')
+        URL=$$(gcloud run services describe neuratrade-api --region asia-south1 --format='value(status.url)')
         echo "Verifying deployment at $$URL"
         for path in "/health" "/advisor/list" "/investor/dashboard" "/signal/feed"; do
-<<<<<<< HEAD
           status=$$(curl -s -o /dev/null -w "%{http_code}" "$$URL$$path")
           if [ "$$status" != "200" ] && [ "$$status" != "401" ]; then
             echo "FAILED: $$path returned $$status"
-=======
- t$s=$(curl -s -o /dev/null -w "%{http_code}" "$URL$path")
-          if [ "$status" != "200" ] && [ "$status" != "401" ]; then
-            echo "FAILED: $path returned $status"
->>>>>>> 6292847 (Fix variable assignment syntax in cloudbuild.yaml)
             exit 1
           fi
           echo "PASSED: $$path returned $$status"
@@ -31,28 +56,6 @@ steps:
 
 images:
   - 'asia-south1-docker.pkg.dev/$PROJECT_ID/neuratrade-repo/neuratrade-api:$COMMIT_SHA'
-<<<<<<< HEAD
 
-=======
->>>>>>> 4b95012 (Add logging options to cloudbuild.yaml)
-=======
-- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-  entrypoint: gcloud
-  args:
-    - run
-    - deploy
-    - neuratrade-api
-    - --image
-    - asia-south1-docker.pkg.dev/$PROJECT_ID/neuratrade-repo/neuratrade-api:$COMMIT_SHA
-    - --region
-    - asia-south1
-    - --platform
-    - managed
-    - --allow-unauthenticated
-
-images:
-- asia-south1-docker.pkg.dev/$PROJECT_ID/neuratrade-repo/neuratrade-api:$COMMIT_SHA
-
->>>>>>> cee5f03 (Refactor cloudbuild.yaml for deployment stages)
 options:
   logging: CLOUD_LOGGING_ONLY
