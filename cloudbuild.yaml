@@ -42,22 +42,25 @@ steps:
       - '--set-env-vars'
       - 'DATABASE_URL=$_DATABASE_URL,JWT_SECRET=$_JWT_SECRET,NEXT_PUBLIC_API_URL=$_NEXT_PUBLIC_API_URL'
 
-  # Stage 5: Verification Task
+  # Stage 5: Verification Task (Escaped shell variables with $$)
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: 'bash'
     args:
       - '-c'
       - |
-        URL=$(gcloud run services describe neuratrade-api --region asia-south1 --format='value(status.url)')
-        echo "Verifying deployment at $URL"
+        URL=$$(gcloud run services describe neuratrade-api --region asia-south1 --format='value(status.url)')
+        echo "Verifying deployment at $$URL"
         for path in "/health" "/advisor/list" "/investor/dashboard" "/signal/feed"; do
-          status=$(curl -s -o /dev/null -w "%{http_code}" "$URL$path")
-          if [ "$status" != "200" ] && [ "$status" != "401" ]; then
-            echo "FAILED: $path returned $status"
+          status=$$(curl -s -o /dev/null -w "%{http_code}" "$$URL$$path")
+          if [ "$$status" != "200" ] && [ "$$status" != "401" ]; then
+            echo "FAILED: $$path returned $$status"
             exit 1
           fi
-          echo "PASSED: $path returned $status"
+          echo "PASSED: $$path returned $$status"
         done
 
 images:
   - 'asia-south1-docker.pkg.dev/$PROJECT_ID/neuratrade-repo/neuratrade-api:$COMMIT_SHA'
+
+options:
+  logging: CLOUD_LOGGING
