@@ -23,4 +23,3 @@ src/phase7-performance-test.ts(55,54): error TS18046: 's1.data' is of type 'unkn
 src/phase7-performance-test.ts(56,54): error TS18046: 's2.data' is of type 'unknown'.
 src/phase7-performance-test.ts(64,47): error TS18046: 'trustRes.data' is of type 'unknown'.
 src/phase7-performance-test.ts(72,29): error TS18046: 'profileRes.data' is of type 'unknown'.
-src/services/AuthService.ts(18,15): error TS2304: Cannot find name 'Role'.
