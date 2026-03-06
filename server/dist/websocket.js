@@ -1,11 +1,36 @@
 import { WebSocketServer, WebSocket } from 'ws';
 import { Server } from 'http';
+import jwt from 'jsonwebtoken';
+const JWT_SECRET = process.env.JWT_SECRET || process.env.NEXTAUTH_SECRET || 'fallback-secret-for-dev-only';
+let broadcastToAll = null;
+export const getBroadcastToAll = () => broadcastToAll;
 export function setupWebSockets(server) {
     const wss = new WebSocketServer({ noServer: true });
-    server.on('upgrade', (request, socket, head) => {
-        wss.handleUpgrade(request, socket, head, (ws) => {
-            wss.emit('connection', ws, request);
+    broadcastToAll = (data) => {
+        wss.clients.forEach((client) => {
+            if (client.readyState === WebSocket.OPEN) {
+                client.send(JSON.stringify(data));
+            }
         });
+    };
+    server.on('upgrade', (request, socket, head) => {
+        const url = new URL(request.url || '', `http://${request.headers.host}`);
+        const token = url.searchParams.get('token');
+        if (!token) {
+            socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+            socket.destroy();
+            return;
+        }
+        try {
+            jwt.verify(token, JWT_SECRET);
+            wss.handleUpgrade(request, socket, head, (ws) => {
+                wss.emit('connection', ws, request);
+            });
+        }
+        catch (err) {
+            socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+            socket.destroy();
+        }
     });
     wss.on('connection', (ws) => {
         console.log('✅ Client connected to market data stream');
@@ -25,7 +50,16 @@ export function setupWebSockets(server) {
             console.log('ℹ️ Client disconnected');
         });
     });
-    return wss;
+    return {
+        wss,
+        broadcastToAll: (data) => {
+            wss.clients.forEach((client) => {
+                if (client.readyState === WebSocket.OPEN) {
+                    client.send(JSON.stringify(data));
+                }
+            });
+        }
+    };
 }
 function startBrokerStream(clientWs, symbols) {
     // This is where real SmartAPI WebSocket integration would live.

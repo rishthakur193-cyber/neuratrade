@@ -1,11 +1,10 @@
 generator client {
   provider = "prisma-client-js"
-  engineType = "binary"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 // Enum defining the 4 core platform roles
@@ -31,7 +30,7 @@ model User {
   passwordHash      String
   role              Role      @default(INVESTOR)
   kycStatus         KycStatus @default(PENDING)
-  kycDocuments      String[]  @default([])  // GCS paths or local file paths
+  kycDocuments      String    @default("[]")  // JSON stringified array of GCS paths or local file paths
   twoFactorEnabled  Boolean   @default(false)
   twoFactorSecret   String?                 // TOTP secret (encrypted at rest ideally)
   createdAt         DateTime  @default(now())
@@ -63,6 +62,7 @@ model InvestorProfile {
   
   // An investor can follow multiple strategies/advisors
   portfolios      Portfolio[]
+  subscriptions   AdvisorSubscription[]
 }
 
 // Profile for SEBI Registered Advisors
@@ -80,6 +80,7 @@ model AdvisorProfile {
   
   // An advisor can create multiple strategies
   strategies      Strategy[]
+  subscribers     AdvisorSubscription[]
 }
 
 // Profile for Aspiring Advisors (90-Day Journey)
@@ -105,7 +106,7 @@ model Strategy {
   cagr            Float
   minInvestment   Float
   description     String
-  tags            String[]
+  tags            String   // JSON stringified array of tags
   isActive        Boolean  @default(true)
   
   createdAt       DateTime @default(now())
@@ -171,6 +172,26 @@ model ConversationParticipant {
   userId          String
   user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@id([conversationId, userId])
+}
+
+// Subscriptions between Investors and Advisors
+model AdvisorSubscription {
+  id              String   @id @default(uuid())
+  investorId      String
+  investor        InvestorProfile @relation(fields: [investorId], references: [id], onDelete: Cascade)
+  
+  advisorId       String
+  advisor         AdvisorProfile  @relation(fields: [advisorId], references: [id], onDelete: Cascade)
+  
+  plan            String   // MONTHLY, QUARTERLY, YEARLY
+  status          String   @default("ACTIVE") // ACTIVE, EXPIRED, CANCELLED
+  startDate       DateTime @default(now())
+  endDate         DateTime?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([investorId, advisorId])
 }
 
 // Trainee Education Progress

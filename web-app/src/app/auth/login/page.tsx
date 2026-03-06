@@ -39,15 +39,22 @@ export default function LoginPage() {
                     return;
                 }
 
-                localStorage.setItem("token", data.token);
-                localStorage.setItem("userRole", data.user.role);
+                if (data.token) {
+                    const userData = {
+                        token: data.token,
+                        user: data.user
+                    };
+                    localStorage.setItem("ecosystem_user", JSON.stringify(userData));
+                    localStorage.setItem("token", data.token); // Backwards compatibility
+                    localStorage.setItem("userRole", data.user.role);
 
-                // Redirect based on role
-                const role = data.user.role;
-                if (role === 'ADMIN') window.location.href = '/admin/dashboard';
-                else if (role === 'ADVISOR') window.location.href = '/advisor/dashboard';
-                else if (role === 'TRAINEE') window.location.href = '/trainee/dashboard';
-                else window.location.href = '/dashboard';
+                    // Cookie storage for SSR/Middleware is handled by the API route response
+                    const role = data.user.role;
+                    if (role === 'ADMIN') window.location.href = '/admin/dashboard';
+                    else if (role === 'ADVISOR') window.location.href = '/advisor/dashboard';
+                    else if (role === 'TRAINEE') window.location.href = '/trainee/dashboard';
+                    else window.location.href = '/dashboard';
+                }
             } else {
                 setError(data.error || "Authentication failed");
             }

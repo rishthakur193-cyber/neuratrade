@@ -275,8 +275,12 @@ export default function MarketplacePage() {
                                         <div className="absolute top-0 right-0 w-24 h-24 bg-accent-cyan/5 blur-3xl pointer-events-none" />
                                     </div>
 
-                                    <PremiumButton variant="primary" className="w-full shadow-neon-glow !shadow-accent-cyan/20 hover:!shadow-accent-cyan/40">
-                                        Request Mandate Memo
+                                    <PremiumButton
+                                        variant="primary"
+                                        className="w-full shadow-neon-glow !shadow-accent-cyan/20 hover:!shadow-accent-cyan/40"
+                                        onClick={() => window.location.href = `/advisor/${i + 1}`}
+                                    >
+                                        View Mandate & Profile
                                     </PremiumButton>
                                 </div>
                             </GlassCard>

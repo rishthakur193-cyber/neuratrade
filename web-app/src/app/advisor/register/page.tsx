@@ -35,9 +35,56 @@ const steps = [
 
 export default function AdvisorRegisterPage() {
     const [currentStep, setCurrentStep] = useState(1);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [formData, setFormData] = useState({
+        name: "",
+        email: "",
+        password: "DefaultPass@123", // Simplified for onboarding UX
+        phone: "",
+        sebiRegNo: "",
+        yearsOfExperience: "",
+        mandateScale: "RETAIL: < 10 CR"
+    });
 
-    const nextStep = () => setCurrentStep((prev) => Math.min(prev + 1, steps.length));
+    const nextStep = () => {
+        if (currentStep === 3) {
+            handleSubmit();
+        } else {
+            setCurrentStep((prev) => Math.min(prev + 1, steps.length));
+        }
+    };
     const prevStep = () => setCurrentStep((prev) => Math.max(prev - 1, 1));
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleSubmit = async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const res = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ...formData,
+                    role: 'ADVISOR'
+                })
+            });
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Registration failed');
+
+            setCurrentStep(4); // Success step
+        } catch (err: any) {
+            setError(err.message);
+            setCurrentStep(2); // Go back to professional details if it failed
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     return (
         <div className="min-h-screen bg-[#0B0B12] text-white flex flex-col items-center justify-center p-8 overflow-hidden relative">
@@ -59,8 +106,8 @@ export default function AdvisorRegisterPage() {
                                         boxShadow: isCurrent ? "0 0 20px rgba(124, 77, 255, 0.4)" : "none"
                                     }}
                                     className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 border ${isActive
-                                            ? "bg-premium-gradient text-white border-transparent"
-                                            : "bg-black/40 text-text-muted border-white/10"
+                                        ? "bg-premium-gradient text-white border-transparent"
+                                        : "bg-black/40 text-text-muted border-white/10"
                                         }`}
                                 >
                                     <Icon size={24} />
@@ -94,25 +141,51 @@ export default function AdvisorRegisterPage() {
                                     <p className="text-text-secondary font-medium italic">Initialize your fiduciary signature on the network.</p>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    {error && (
+                                        <div className="md:col-span-2 p-4 bg-danger/10 border border-danger/20 rounded-2xl text-danger text-xs font-bold text-center">
+                                            {error}
+                                        </div>
+                                    )}
                                     <div className="space-y-4 md:col-span-2">
                                         <label className="text-[10px] font-black uppercase tracking-[0.3em] text-text-muted">Legal Surname & Initials</label>
                                         <div className="relative group">
                                             <User className="absolute left-6 top-1/2 -translate-y-1/2 text-text-muted group-focus-within:text-accent-secondary transition-colors" size={20} />
-                                            <input type="text" placeholder="ALEXANDER VANCE" className="w-full bg-black/40 border border-white/5 rounded-[24px] py-5 pl-16 pr-6 text-white text-sm font-black tracking-widest focus:border-accent-secondary transition-all outline-none uppercase" />
+                                            <input
+                                                type="text"
+                                                name="name"
+                                                value={formData.name}
+                                                onChange={handleChange}
+                                                placeholder="ALEXANDER VANCE"
+                                                className="w-full bg-black/40 border border-white/5 rounded-[24px] py-5 pl-16 pr-6 text-white text-sm font-black tracking-widest focus:border-accent-secondary transition-all outline-none uppercase"
+                                            />
                                         </div>
                                     </div>
                                     <div className="space-y-4">
                                         <label className="text-[10px] font-black uppercase tracking-[0.3em] text-text-muted">Mandate Email</label>
                                         <div className="relative group">
                                             <Mail className="absolute left-6 top-1/2 -translate-y-1/2 text-text-muted group-focus-within:text-accent-secondary transition-colors" size={20} />
-                                            <input type="email" placeholder="VANCE@CAPITAL.COM" className="w-full bg-black/40 border border-white/5 rounded-[24px] py-5 pl-16 pr-6 text-white text-sm font-black tracking-widest focus:border-accent-secondary transition-all outline-none uppercase" />
+                                            <input
+                                                type="email"
+                                                name="email"
+                                                value={formData.email}
+                                                onChange={handleChange}
+                                                placeholder="VANCE@CAPITAL.COM"
+                                                className="w-full bg-black/40 border border-white/5 rounded-[24px] py-5 pl-16 pr-6 text-white text-sm font-black tracking-widest focus:border-accent-secondary transition-all outline-none uppercase"
+                                            />
                                         </div>
                                     </div>
                                     <div className="space-y-4">
                                         <label className="text-[10px] font-black uppercase tracking-[0.3em] text-text-muted">Cellular Uplink</label>
                                         <div className="relative group">
                                             <Phone className="absolute left-6 top-1/2 -translate-y-1/2 text-text-muted group-focus-within:text-accent-secondary transition-colors" size={20} />
-                                            <input type="text" placeholder="+91 90000 00000" className="w-full bg-black/40 border border-white/5 rounded-[24px] py-5 pl-16 pr-6 text-white text-sm font-black tracking-widest focus:border-accent-secondary transition-all outline-none uppercase" />
+                                            <input
+                                                type="text"
+                                                name="phone"
+                                                value={formData.phone}
+                                                onChange={handleChange}
+                                                placeholder="+91 90000 00000"
+                                                className="w-full bg-black/40 border border-white/5 rounded-[24px] py-5 pl-16 pr-6 text-white text-sm font-black tracking-widest focus:border-accent-secondary transition-all outline-none uppercase"
+                                            />
                                         </div>
                                     </div>
                                 </div>
@@ -131,21 +204,40 @@ export default function AdvisorRegisterPage() {
                                         <label className="text-[10px] font-black uppercase tracking-[0.3em] text-text-muted">SEBI Registration Cipher</label>
                                         <div className="relative group">
                                             <Shield className="absolute left-6 top-1/2 -translate-y-1/2 text-text-muted group-focus-within:text-accent-secondary transition-colors" size={20} />
-                                            <input type="text" placeholder="INA0000XXXXX" className="w-full bg-black/40 border border-white/5 rounded-[24px] py-5 pl-16 pr-6 text-white text-lg font-black tracking-widest focus:border-accent-secondary transition-all outline-none uppercase" />
+                                            <input
+                                                type="text"
+                                                name="sebiRegNo"
+                                                value={formData.sebiRegNo}
+                                                onChange={handleChange}
+                                                placeholder="INA0000XXXXX"
+                                                className="w-full bg-black/40 border border-white/5 rounded-[24px] py-5 pl-16 pr-6 text-white text-lg font-black tracking-widest focus:border-accent-secondary transition-all outline-none uppercase"
+                                            />
                                         </div>
                                     </div>
                                     <div className="grid grid-cols-2 gap-8">
                                         <div className="space-y-4">
                                             <label className="text-[10px] font-black uppercase tracking-[0.3em] text-text-muted">Professional Vintage (Years)</label>
-                                            <input type="number" placeholder="5" className="w-full bg-black/40 border border-white/5 rounded-[24px] py-5 px-6 text-white text-sm font-black tracking-widest focus:border-accent-secondary transition-all outline-none" />
+                                            <input
+                                                type="number"
+                                                name="yearsOfExperience"
+                                                value={formData.yearsOfExperience}
+                                                onChange={handleChange}
+                                                placeholder="5"
+                                                className="w-full bg-black/40 border border-white/5 rounded-[24px] py-5 px-6 text-white text-sm font-black tracking-widest focus:border-accent-secondary transition-all outline-none"
+                                            />
                                         </div>
                                         <div className="space-y-4">
                                             <label className="text-[10px] font-black uppercase tracking-[0.3em] text-text-muted">Mandate Scale (Cr)</label>
-                                            <select className="w-full bg-black/40 border border-white/5 rounded-[24px] py-5 px-6 text-white text-sm font-black tracking-widest focus:border-accent-secondary transition-all outline-none appearance-none cursor-pointer uppercase">
-                                                <option>RETAIL: &lt; 10 CR</option>
-                                                <option>PARTNER: 10 - 50 CR</option>
-                                                <option>ELITE: 50 - 100 CR</option>
-                                                <option>FOUNDATION: 100+ CR</option>
+                                            <select
+                                                name="mandateScale"
+                                                value={formData.mandateScale}
+                                                onChange={handleChange}
+                                                className="w-full bg-black/40 border border-white/5 rounded-[24px] py-5 px-6 text-white text-sm font-black tracking-widest focus:border-accent-secondary transition-all outline-none appearance-none cursor-pointer uppercase"
+                                            >
+                                                <option value="RETAIL: < 10 CR">RETAIL: &lt; 10 CR</option>
+                                                <option value="PARTNER: 10 - 50 CR">PARTNER: 10 - 50 CR</option>
+                                                <option value="ELITE: 50 - 100 CR">ELITE: 50 - 100 CR</option>
+                                                <option value="FOUNDATION: 100+ CR">FOUNDATION: 100+ CR</option>
                                             </select>
                                         </div>
                                     </div>
@@ -229,9 +321,10 @@ export default function AdvisorRegisterPage() {
                                 <PremiumButton
                                     variant="primary"
                                     onClick={nextStep}
+                                    disabled={isLoading}
                                     className="flex-1 uppercase tracking-widest text-[11px] shadow-neon-glow py-5"
                                 >
-                                    {currentStep === 3 ? "Initialize Final Audit" : "Construct Profile"} <ArrowRight size={20} className="ml-3 inline-block" />
+                                    {isLoading ? "Processing..." : (currentStep === 3 ? "Initialize Final Audit" : "Construct Profile")} <ArrowRight size={20} className="ml-3 inline-block" />
                                 </PremiumButton>
                             )}
                             {currentStep === 4 && (

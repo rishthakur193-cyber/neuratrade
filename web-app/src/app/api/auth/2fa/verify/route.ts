@@ -3,10 +3,13 @@ import { AuthService } from '@/services/auth.service';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.NEXTAUTH_SECRET || 'super-secret-key-change-in-production-ecosystem-2026';
-
 export async function POST(req: Request) {
     try {
+        if (!process.env.NEXTAUTH_SECRET) {
+            return NextResponse.json({ error: '[FATAL] Server misconfiguration: NEXTAUTH_SECRET not set.' }, { status: 500 });
+        }
+        const JWT_SECRET = process.env.NEXTAUTH_SECRET;
+
         const { code } = await req.json();
         const cookieStore = await cookies();
         const token = cookieStore.get('ecosystem_token')?.value;

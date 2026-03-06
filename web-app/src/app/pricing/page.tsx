@@ -59,10 +59,47 @@ const plans = [
 export default function PricingPage() {
     const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
     const [showCheckout, setShowCheckout] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [successMsg, setSuccessMsg] = useState("");
 
     const handleSelect = (planName: string) => {
         setSelectedPlan(planName);
         setShowCheckout(true);
+        setSuccessMsg("");
+    };
+
+    const handlePayment = async (method: string) => {
+        setLoading(true);
+        try {
+            const storedUser = localStorage.getItem('ecosystem_user');
+            if (!storedUser) {
+                window.location.href = '/auth/login';
+                return;
+            }
+            const { token } = JSON.parse(storedUser);
+
+            const cost = plans.find(p => p.name === selectedPlan)?.price || 'Free';
+
+            const res = await fetch('/api/platform-subscriptions/upgrade', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ plan: selectedPlan, amount: cost, method })
+            });
+
+            if (res.ok) {
+                setSuccessMsg(`NODE DEPLOYED: Welcome to ${selectedPlan}. Redirecting to Mission Control...`);
+                setTimeout(() => window.location.href = '/dashboard', 3000);
+            } else {
+                alert("Payment Authorization Failed.");
+            }
+        } catch (error) {
+            alert("Network Connectivity Issue.");
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -241,7 +278,7 @@ export default function PricingPage() {
                                     </div>
 
                                     <div className="space-y-6 mb-12 relative z-10">
-                                        <div className="p-6 rounded-3xl border-2 border-accent-secondary bg-accent-secondary/5 flex items-center justify-between cursor-pointer shadow-neon-glow !shadow-accent-secondary/5 group">
+                                        <div className="p-6 rounded-3xl border-2 border-accent-secondary bg-accent-secondary/5 flex items-center justify-between cursor-pointer shadow-neon-glow !shadow-accent-secondary/5 group" onClick={() => handlePayment('UPI')}>
                                             <div className="flex items-center gap-5">
                                                 <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center p-2 shadow-lg transition-transform group-hover:scale-105">
                                                     <img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/UPI-Logo-vector.svg" alt="UPI" className="w-full" />
@@ -254,7 +291,7 @@ export default function PricingPage() {
                                             <div className="w-6 h-6 rounded-full border-4 border-accent-secondary bg-accent-secondary animate-pulse shadow-neon-glow" />
                                         </div>
 
-                                        <div className="p-6 rounded-3xl border border-white/5 bg-white/[0.02] flex items-center justify-between cursor-pointer opacity-40 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-500">
+                                        <div className="p-6 rounded-3xl border border-white/5 bg-white/[0.02] flex items-center justify-between cursor-pointer opacity-40 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-500" onClick={() => handlePayment('CARD')}>
                                             <div className="flex items-center gap-5">
                                                 <div className="w-12 h-12 rounded-xl bg-black/40 border border-white/10 flex items-center justify-center text-text-muted italic text-xs font-black">
                                                     CC/DC
@@ -281,10 +318,16 @@ export default function PricingPage() {
                                         </div>
                                     </div>
 
-                                    <PremiumButton variant="primary" className="w-full py-6 text-sm font-black uppercase tracking-[0.3em] shadow-neon-glow group relative z-10 overflow-hidden">
-                                        Deploy & Activate Node
+                                    <PremiumButton variant="primary" onClick={() => handlePayment('SYSTEM_DEFAULT')} disabled={loading} className="w-full py-6 text-sm font-black uppercase tracking-[0.3em] shadow-neon-glow group relative z-10 overflow-hidden">
+                                        {loading ? "PROCESSING..." : "Deploy & Activate Node"}
                                         <motion.div className="absolute inset-0 bg-white/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                                     </PremiumButton>
+
+                                    {successMsg && (
+                                        <div className="mt-4 p-4 rounded-xl bg-success/10 border border-success/30 text-success text-[10px] font-black tracking-widest uppercase text-center animate-pulse">
+                                            {successMsg}
+                                        </div>
+                                    )}
 
                                     <div className="mt-8 text-center text-[9px] text-text-muted font-black uppercase tracking-[0.4em] flex items-center justify-center gap-3 relative z-10">
                                         <Lock size={12} className="text-success shadow-neon-glow-success" /> 100% SECURE CRYPTOGRAPHIC TRANSACTION

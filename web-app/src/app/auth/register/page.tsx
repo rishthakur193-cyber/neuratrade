@@ -48,12 +48,32 @@ export default function RegisterPage() {
 
     const handleInputChange = (e: any) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
+        setError(""); // Clear error on input change
     };
 
-    const nextStep = () => setCurrentStep((prev) => Math.min(prev + 1, steps.length));
-    const prevStep = () => setCurrentStep((prev) => Math.max(prev - 1, 1));
+    // Per-step validation
+    const validateStep = (): boolean => {
+        setError("");
+        if (currentStep === 1) {
+            if (!formData.fullName.trim()) { setError("Full name is required"); return false; }
+            if (!formData.email.trim() || !formData.email.includes("@")) { setError("Valid email is required"); return false; }
+            if (!formData.password || formData.password.length < 6) { setError("Password must be at least 6 characters"); return false; }
+        }
+        if (currentStep === 2) {
+            if (formData.pan && formData.pan.length !== 10) { setError("PAN must be exactly 10 characters (e.g. ABCDE1234F)"); return false; }
+            if (formData.aadhaar && !/^\d{12}$/.test(formData.aadhaar.replace(/\s/g, ""))) { setError("Aadhaar must be exactly 12 digits"); return false; }
+        }
+        return true;
+    };
+
+    const nextStep = () => {
+        if (!validateStep()) return;
+        setCurrentStep((prev) => Math.min(prev + 1, steps.length));
+    };
+    const prevStep = () => { setError(""); setCurrentStep((prev) => Math.max(prev - 1, 1)); };
 
     const handleRegister = async () => {
+        if (!validateStep()) return;
         setLoading(true);
         setError("");
         try {
@@ -61,8 +81,8 @@ export default function RegisterPage() {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    name: formData.fullName,
-                    email: formData.email,
+                    name: formData.fullName.trim(),
+                    email: formData.email.trim().toLowerCase(),
                     password: formData.password,
                     role: "INVESTOR"
                 }),
@@ -71,23 +91,30 @@ export default function RegisterPage() {
             const data = await res.json();
 
             if (!res.ok) {
-                throw new Error(data.error || "Failed to register");
+                throw new Error(data.error || `Registration failed (${res.status})`);
             }
 
             // Auto-login after registration
             const loginRes = await fetch("/api/auth/login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email: formData.email, password: formData.password }),
+                body: JSON.stringify({ email: formData.email.trim().toLowerCase(), password: formData.password }),
             });
             const loginData = await loginRes.json();
 
-            if (loginRes.ok) {
-                localStorage.setItem("token", loginData.token);
-                localStorage.setItem("userRole", loginData.user.role);
+            if (loginRes.ok && loginData.token) {
+                const userData = {
+                    token: loginData.token,
+                    user: loginData.user || { email: formData.email, role: 'INVESTOR' }
+                };
+                localStorage.setItem("ecosystem_user", JSON.stringify(userData));
+                localStorage.setItem("token", loginData.token); // Keep for compatibility
+                localStorage.setItem("userRole", userData.user.role);
             }
 
             nextStep(); // Go to step 4 (Success)
+            // Auto-redirect to dashboard after 3 seconds
+            setTimeout(() => { window.location.href = '/dashboard'; }, 3000);
         } catch (err: any) {
             setError(err.message);
         } finally {
@@ -130,8 +157,8 @@ export default function RegisterPage() {
                                     boxShadow: isActive ? "0 0 20px rgba(179, 136, 255, 0.4)" : "none"
                                 }}
                                 className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all border ${isActive
-                                        ? "bg-premium-gradient text-white border-accent-secondary"
-                                        : "bg-black/40 text-text-muted border-white/10 backdrop-blur-xl"
+                                    ? "bg-premium-gradient text-white border-accent-secondary"
+                                    : "bg-black/40 text-text-muted border-white/10 backdrop-blur-xl"
                                     }`}
                             >
                                 {isCompleted ? <CheckCircle2 size={24} /> : <Icon size={20} />}

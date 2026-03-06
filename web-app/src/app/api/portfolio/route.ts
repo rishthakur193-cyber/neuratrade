@@ -18,7 +18,7 @@ export async function GET(req: Request) {
             return NextResponse.json({ error: 'Session Invalid' }, { status: 401 });
         }
 
-        const overview = await PortfolioService.getOverview(user.id);
+        const overview = await PortfolioService.getOverview(token);
 
         return NextResponse.json(overview, { status: 200 });
 

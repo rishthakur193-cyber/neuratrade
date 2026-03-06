@@ -1,0 +1,30 @@
+# Dependencies
+node_modules
+.next
+
+# Dev files
+.env.local
+.env.development
+*.log
+npm-debug.log*
+
+# Version control
+.git
+.gitignore
+
+# Local dev databases (never deploy SQLite)
+*.sqlite
+*.db
+
+# Test / audit files
+e2e-audit/
+*.test.ts
+*.spec.ts
+
+# Build artifacts that should be regenerated
+.next/cache
+tsconfig.tsbuildinfo
+build.log
+build.txt
+build_error_capture.txt
+fix.js

@@ -1,19 +1,87 @@
 {
   "working": [
+    "Login Flow & Dashboard Redirect",
+    "Dashboard Route",
     "Mobile Responsiveness (CSS Media Queries active)"
   ],
   "failing": [
     "User Registration Flow",
-    "Login Flow & Dashboard Redirect",
-    "KYC Protocol Initialization UI/API"
+    "AI 8 Pillars Analysis failed to render verdict.",
+    "Order Execution API failed to acknowledge.",
+    "Platform Subscription Upgrade Flow"
   ],
   "mocked": [
     "KYC document upload strictly mocks ID transfer, actual file binary not sent.",
     "Order Execution simulates placement to DB, real Zerodha/AngelOne execution bypass via DEV env wrapper.",
     "Transaction ledger on Dashboard hardcodes historical transactions."
   ],
-  "consoleLogs": [],
+  "consoleLogs": [
+    {
+      "type": "error",
+      "text": "WebSocket connection to 'ws://localhost:5000/' failed: HTTP Authentication failed; no valid credentials available"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    },
+    {
+      "type": "error",
+      "text": "WebSocket connection to 'ws://localhost:5000/' failed: HTTP Authentication failed; no valid credentials available"
+    },
+    {
+      "type": "error",
+      "text": "WebSocket connection to 'ws://localhost:5000/' failed: HTTP Authentication failed; no valid credentials available"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    },
+    {
+      "type": "error",
+      "text": "WebSocket connection to 'ws://localhost:5000/' failed: HTTP Authentication failed; no valid credentials available"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    },
+    {
+      "type": "error",
+      "text": "WebSocket connection to 'ws://localhost:5000/' failed: HTTP Authentication failed; no valid credentials available"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 429 (Too Many Requests)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    },
+    {
+      "type": "error",
+      "text": "WebSocket connection to 'ws://localhost:5000/' failed: HTTP Authentication failed; no valid credentials available"
+    }
+  ],
   "networkErrors": [],
-  "dbReality": "Database failed to create user or redirect properly. KYC endpoint failed. ",
+  "dbReality": "Registration timed out. ",
   "mobileTest": "Pass: Sidebar hides on mobile viewport appropriately."
 }

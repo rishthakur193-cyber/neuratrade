@@ -2,51 +2,47 @@ FROM node:20-alpine AS base
 
 # Install dependencies only when needed
 FROM base AS deps
-# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
-RUN apk add --no-cache libc6-compat
+RUN apk add --no-cache libc6-compat python3 make g++
 WORKDIR /app
 
-# Install dependencies based on the preferred package manager
 COPY package.json package-lock.json* ./
 RUN npm ci
 
-# Rebuild the source code only when needed
+# Build stage
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Next.js collects completely anonymous telemetry data about general usage.
-ENV NEXT_TELEMETRY_DISABLED 1
+ENV NEXT_TELEMETRY_DISABLED=1
+# Dummy DATABASE_URL so prisma generate succeeds during build.
+# Real value is injected via Cloud Run --set-env-vars at deploy time.
+ENV DATABASE_URL=postgresql://build:build@localhost:5432/build
 
-# Generate prisma client before build
 RUN npx prisma generate
 RUN npm run build
 
-# Production image, copy all the files and run next
+# Production image
 FROM base AS runner
 WORKDIR /app
 
-ENV NODE_ENV production
-ENV NEXT_TELEMETRY_DISABLED 1
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+# Cloud Run injects PORT=8080 at runtime.
+ENV PORT=8080
+ENV HOSTNAME=0.0.0.0
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
+# Next.js standalone output lands under .next/standalone/web-app/ due to workspace root detection.
+# We copy the nested web-app folder contents directly into /app.
 COPY --from=builder /app/public ./public
-
-# Automatically leverage output traces to reduce image size
-# https://nextjs.org/docs/advanced-features/output-file-tracing
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone/web-app/ ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-# Make sure to copy the SQLite DB or Prisma migrations folder if needed here.
-# For PostgreSQL migration, we purely rely on the DATABASE_URL env variable during runtime.
 
 USER nextjs
 
-EXPOSE 3000
-
-ENV PORT 3000
-ENV HOSTNAME "0.0.0.0"
+EXPOSE 8080
 
 CMD ["node", "server.js"]

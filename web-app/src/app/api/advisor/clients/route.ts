@@ -16,9 +16,9 @@ export async function GET(req: Request) {
             return NextResponse.json({ error: 'Advisor Privileges Required' }, { status: 403 });
         }
 
-        const clients = await AdvisorService.getClients(user.id);
+        const clients = await AdvisorService.getClients(token);
 
-        return NextResponse.json({ clients }, { status: 200 });
+        return NextResponse.json(clients, { status: 200 });
 
     } catch (error: any) {
         console.error('Advisor Client Fetch Error:', error);

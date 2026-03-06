@@ -28,49 +28,84 @@ async function runAudit() {
     });
 
     try {
-        // 1. App Load & Registration Flow
+        // 1. App Load & Registration Flow (Multi-Step)
         console.log("Navigating to http://localhost:3000/auth/register...");
-        await page.goto('http://localhost:3000/auth/register', { waitUntil: 'domcontentloaded' });
+        await page.goto('http://localhost:3000/auth/register', { waitUntil: 'networkidle2' });
 
-        console.log("Filling registration form...");
-        await page.type('input[type="text"]', 'Audit Tester');
-        await page.type('input[type="email"]', `audit_${Date.now()}@ecosystem.io`);
-        await page.type('input[type="password"]', 'Password123!');
+        console.log("Step 1: Identity Profile (Wait for input)...");
+        await page.waitForSelector('input[name="fullName"]', { timeout: 10000 });
+        await page.type('input[name="fullName"]', 'Audit Tester');
+        await page.type('input[name="email"]', `audit_${Date.now()}@ecosystem.io`);
+        await page.type('input[name="password"]', 'Password123!');
 
-        console.log("Submitting registration...");
+        console.log("Clicking Continue Sequence - Step 1 -> 2...");
         await page.evaluate(() => {
-            const buttons = Array.from(document.querySelectorAll('button'));
-            const registerBtn = buttons.find(b => b.innerText.toUpperCase().includes('REGISTER') || b.innerText.toUpperCase().includes('INITIALIZE'));
-            if (registerBtn) registerBtn.click();
-            else document.querySelector('form')?.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+            const btns = Array.from(document.querySelectorAll('button'));
+            const nextBtn = btns.find(b => b.innerText.includes('Continue'));
+            if (nextBtn) nextBtn.click();
+            else throw new Error("Could not find Continue button in Step 1");
         });
-        await wait(3000);
+        await wait(2000);
 
-        if (page.url().includes('login') || page.url().includes('dashboard')) {
-            report.working.push("User Registration Flow");
-            report.dbReality += "Database successfully created a new user and redirected properly. ";
-        } else {
+        console.log("Step 2: Compliance Profile (Wait for PAN input)...");
+        await page.waitForSelector('input[name="pan"]', { timeout: 5000 });
+        await page.type('input[name="pan"]', 'ABCDE1234F');
+        await page.type('input[name="aadhaar"]', '1234 5678 9012');
+
+        console.log("Clicking Continue Sequence - Step 2 -> 3...");
+        await page.evaluate(() => {
+            const btns = Array.from(document.querySelectorAll('button'));
+            const nextBtn = btns.find(b => b.innerText.includes('Continue'));
+            if (nextBtn) nextBtn.click();
+            else throw new Error("Could not find Continue button in Step 2");
+        });
+        await wait(2000);
+
+        console.log("Step 3: Wealth Profile & Submit...");
+        await page.evaluate(() => {
+            const btns = Array.from(document.querySelectorAll('button'));
+            const submitBtn = btns.find(b => b.innerText.includes('Complete'));
+            if (submitBtn) submitBtn.click();
+            else throw new Error("Could not find Complete button in Step 3");
+        });
+
+        console.log("Waiting for registration success (System Ready)...");
+        try {
+            await page.waitForFunction(() => document.body.innerText.includes('System Ready'), { timeout: 15000 });
+            console.log("SUCCESS: Registration completed.");
+            report.working.push("User Registration Flow (Multi-Step)");
+            report.dbReality += "DB successfully created a new user. ";
+        } catch (e) {
+            console.log("FAILURE: Registration success state not detected. Taking failure_reg.png");
+            await page.screenshot({ path: 'failure_reg.png' });
             report.failing.push("User Registration Flow");
-            report.dbReality += "Database failed to create user or redirect properly. ";
+            report.dbReality += "Registration timed out. ";
         }
 
+        await wait(3000);
+
         // 2. Login Flow
-        console.log("Logging in...");
-        await page.goto('http://localhost:3000/auth/login', { waitUntil: 'domcontentloaded' });
+        console.log("Navigating to Login Page...");
+        await page.goto('http://localhost:3000/auth/login', { waitUntil: 'networkidle2' });
+        await page.waitForSelector('input[type="email"]', { timeout: 5000 });
         await page.type('input[type="email"]', 'rahul@ecosystem.io');
         await page.type('input[type="password"]', 'password');
 
+        console.log("Clicking Verify Identity...");
         await page.evaluate(() => {
             const buttons = Array.from(document.querySelectorAll('button'));
-            const loginBtn = buttons.find(b => b.innerText.toUpperCase().includes('VERIFY') || b.innerText.toUpperCase().includes('LOGIN'));
+            const loginBtn = buttons.find(b => b.innerText.includes('Verify Identity'));
             if (loginBtn) loginBtn.click();
-            else document.querySelector('form')?.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+            else throw new Error("Could not find Verify Identity button");
         });
-        await wait(3000);
+
+        console.log("Waiting for dashboard redirect...");
+        await wait(6000);
 
         if (page.url().includes('dashboard')) {
-            report.working.push("Login Flow");
-            report.working.push("Dashboard Route");
+            console.log("SUCCESS: Login redirect to dashboard.");
+            report.working.push("Login Flow & Dashboard Redirect");
+            report.working.push("Dashboard Route"); // Keep this as it implies dashboard is reachable after login
 
             // 3. Dashboard Interactivity (Wait for values to load)
             await wait(3000);
@@ -111,25 +146,35 @@ async function runAudit() {
             if (bodyHtml.includes("Invalid credentials")) report.dbReality += "Login failed - Invalid credentials (Password might be different for seeded user). ";
         }
 
-        // 4. KYC Flow
-        console.log("Navigating to KYC...");
-        await page.goto('http://localhost:3000/kyc', { waitUntil: 'domcontentloaded' });
+        // 5. Platform Subscription Upgrade
+        console.log("Navigating to Pricing...");
+        await page.goto('http://localhost:3000/pricing', { waitUntil: 'networkidle2' });
         await wait(2000);
 
+        console.log("Selecting Pro Shield Plan...");
         await page.evaluate(() => {
             const buttons = Array.from(document.querySelectorAll('button'));
-            const btn = buttons.find(b => b.innerText.includes('Initialize E-KYC Protocol'));
-            if (btn) btn.click();
+            const proBtn = buttons.find(b => b.innerText.includes('Go Pro'));
+            if (proBtn) proBtn.click();
         });
         await wait(2000);
 
-        const kycBody = await page.evaluate(() => document.body.innerHTML);
-        if (kycBody.includes("Processing")) {
-            report.working.push("KYC Status Update Pipeline");
-            report.dbReality += "KYC endpoint functionally updates DB state to pending. ";
-        } else {
-            report.failing.push("KYC Protocol Initialization UI/API");
-            if (kycBody.includes("error")) report.dbReality += "KYC endpoint failed. ";
+        console.log("Deploying Node (UPI)...");
+        await page.evaluate(() => {
+            const buttons = Array.from(document.querySelectorAll('button'));
+            const deployBtn = buttons.find(b => b.innerText.includes('Deploy & Activate Node'));
+            if (deployBtn) deployBtn.click();
+        });
+
+        console.log("Waiting for subscription success...");
+        try {
+            await page.waitForFunction(() => document.body.innerText.includes('NODE DEPLOYED'), { timeout: 10000 });
+            console.log("SUCCESS: Platform Subscription Upgraded.");
+            report.working.push("Platform Subscription Upgrade Flow");
+        } catch (e) {
+            console.log("FAILURE: Subscription upgrade failed.");
+            await page.screenshot({ path: 'failure_sub.png' });
+            report.failing.push("Platform Subscription Upgrade Flow");
         }
 
         // 5. Mobile Responsiveness Test

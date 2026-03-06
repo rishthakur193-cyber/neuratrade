@@ -2,110 +2,143 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
 
-const JWT_SECRET = process.env.NEXTAUTH_SECRET || 'super-secret-key-change-in-production-ecosystem-2026';
-const secretKey = new TextEncoder().encode(JWT_SECRET);
-
-// Basic in-memory rate limiter for Edge Runtime
+// ---------------------------------------------------------------------------
+// In-memory rate limiter (Edge-compatible, per-instance)
+// Resets on cold start — intentional for Edge Runtime constraints
+// ---------------------------------------------------------------------------
 const rateLimitMap = new Map<string, { count: number; timestamp: number }>();
-const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
-const MAX_AUTH_REQUESTS = 5; // 5 requests per minute
+const RATE_LIMIT_WINDOW_MS = 60 * 1_000; // 1 minute
+const MAX_AUTH_REQUESTS = 5;             // per IP per window
 
 function isRateLimited(ip: string): boolean {
     const now = Date.now();
     const record = rateLimitMap.get(ip);
-
     if (!record || now - record.timestamp > RATE_LIMIT_WINDOW_MS) {
         rateLimitMap.set(ip, { count: 1, timestamp: now });
         return false;
     }
-
-    if (record.count >= MAX_AUTH_REQUESTS) {
-        return true;
-    }
-
+    if (record.count >= MAX_AUTH_REQUESTS) return true;
     record.count++;
     return false;
 }
 
+// ---------------------------------------------------------------------------
+// Middleware
+// ---------------------------------------------------------------------------
 export async function middleware(req: NextRequest) {
-    const token = req.cookies.get('ecosystem_token')?.value;
     const { pathname } = req.nextUrl;
-    const ip = (req as any).ip ?? req.headers.get('x-forwarded-for') ?? '127.0.0.1';
 
-    // Apply Rate Limiting on Auth Endpoints
-    if (pathname.startsWith('/api/auth/')) {
-        if (isRateLimited(ip)) {
-            return NextResponse.json({ error: 'Rate limit exceeded. Too many requests.' }, { status: 429 });
-        }
+    // ── 1. HEALTH BYPASS ────────────────────────────────────────────────────
+    // Must be the absolute first gate. No env reads, no JWT, no DB.
+    // Cloud Run uptime checks, load balancers, and monitoring always pass.
+    if (pathname.startsWith('/api/health')) {
+        return NextResponse.next();
     }
 
-    // Define public paths that don't need authentication
-    const publicPaths = ['/auth/login', '/auth/register', '/api/auth/login', '/api/auth/register', '/api/auth/2fa/setup', '/api/auth/2fa/verify', '/api/auth/reset-password', '/', '/pricing', '/trust-center'];
-    const isPublicPath = publicPaths.includes(pathname);
+    // ── 2. PUBLIC ROUTES (no token required) ────────────────────────────────
+    const publicApiPaths = [
+        '/api/auth/login',
+        '/api/auth/register',
+        '/api/auth/2fa/setup',
+        '/api/auth/2fa/verify',
+        '/api/auth/reset-password',
+    ];
 
-    // Allow static assets, next internals, and public paths
+    // Decision Intelligence is a public demo — no login required
+    // Leaderboard is public read-only
+    // Verified performance leaderboard and per-advisor profiles are public
+    // Market Intelligence Engine is fully public
+    // Trust Recovery Engine is fully public
+    // Ecosystem Growth Engine is fully public
+    // Broker Integration Layer is fully public
     if (
-        pathname.includes('._next') ||
-        pathname.includes('/public/') ||
-        pathname.startsWith('/_next') ||
-        pathname.match(/\.(.*)$/) ||
-        isPublicPath
+        pathname.startsWith('/api/decision-intelligence/') ||
+        pathname.startsWith('/api/advisor/verified-performance') ||
+        pathname.startsWith('/api/market-intelligence/') ||
+        pathname.startsWith('/api/recovery/') ||
+        pathname.startsWith('/api/ecosystem/') ||
+        pathname.startsWith('/api/broker-integration/') ||
+        pathname === '/api/advisor/leaderboard'
     ) {
         return NextResponse.next();
     }
 
-    // No token? Redirect to login.
-    if (!token) {
-        if (pathname.startsWith('/api/')) {
-            return NextResponse.json({ error: 'Unauthorized middleware barrier' }, { status: 401 });
+    if (pathname.startsWith('/api/auth/')) {
+        const ip = req.headers.get('x-forwarded-for') ?? '127.0.0.1';
+        if (isRateLimited(ip)) {
+            return NextResponse.json(
+                { error: 'Rate limit exceeded. Too many requests.' },
+                { status: 429 }
+            );
         }
-        return NextResponse.redirect(new URL('/auth/register', req.url));
+        if (publicApiPaths.includes(pathname)) {
+            return NextResponse.next();
+        }
+    }
+
+
+    // ── 3. PROTECTED API ROUTES — JWT verification ──────────────────────────
+    // Read secret inside function — never throw at module level.
+    // A missing secret returns 500, not a crash that blocks all routes.
+    const secret = process.env.NEXTAUTH_SECRET;
+    if (!secret) {
+        return NextResponse.json(
+            { error: 'Server misconfiguration: auth secret not configured.' },
+            { status: 500 }
+        );
+    }
+
+    // Accept token from httpOnly cookie OR Authorization: Bearer header
+    const cookieToken = req.cookies.get('ecosystem_token')?.value;
+    const authHeader = req.headers.get('authorization');
+    const bearerToken = authHeader?.startsWith('Bearer ')
+        ? authHeader.split(' ')[1]
+        : null;
+    const token = cookieToken || bearerToken;
+
+    if (!token) {
+        return NextResponse.json(
+            { error: 'Unauthorized middleware barrier' },
+            { status: 401 }
+        );
     }
 
     try {
-        // Verify JWT at the Edge
+        const secretKey = new TextEncoder().encode(secret);
         const { payload } = await jwtVerify(token, secretKey);
         const userRole = payload.role as string;
 
-        // RBAC: Role-Based Access Control
-        if (pathname.startsWith('/investor') && userRole !== 'INVESTOR') {
-            return NextResponse.redirect(new URL('/unauthorized', req.url));
+        // ── RBAC ─────────────────────────────────────────────────────────────
+        if (pathname.startsWith('/api/admin') && userRole !== 'ADMIN') {
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
 
-        if (pathname.startsWith('/advisor') && userRole !== 'ADVISOR') {
-            return NextResponse.redirect(new URL('/unauthorized', req.url));
-        }
+        // Allow investors to access advisor discovery/list/performance
+        const publicAdvisorApiSubpaths = [
+            '/api/advisor/list',
+            '/api/advisor/discovery',
+            '/api/advisor/verified-performance'
+        ];
 
-        if (pathname.startsWith('/trainee') && userRole !== 'TRAINEE') {
-            return NextResponse.redirect(new URL('/unauthorized', req.url));
-        }
+        const isPublicAdvisorApi = publicAdvisorApiSubpaths.some(p => pathname.startsWith(p));
 
-        if (pathname.startsWith('/admin') && userRole !== 'ADMIN') {
-            return NextResponse.redirect(new URL('/unauthorized', req.url));
+        if (pathname.startsWith('/api/advisor') && userRole !== 'ADVISOR' && !isPublicAdvisorApi) {
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
 
         return NextResponse.next();
 
-    } catch (error) {
-        console.error('Middleware Token Error:', error);
-        // Invalid token or expired
-        if (pathname.startsWith('/api/')) {
-            return NextResponse.json({ error: 'Token expired or invalid' }, { status: 401 });
-        }
-        const response = NextResponse.redirect(new URL('/auth/register', req.url));
-        response.cookies.delete('ecosystem_token');
-        return response;
+    } catch {
+        return NextResponse.json(
+            { error: 'Token expired or invalid' },
+            { status: 401 }
+        );
     }
 }
 
+// ---------------------------------------------------------------------------
+// Matcher — API routes only. Static assets / pages never touch middleware.
+// ---------------------------------------------------------------------------
 export const config = {
-    matcher: [
-        /*
-         * Match all request paths except for the ones starting with:
-         * - _next/static (static files)
-         * - _next/image (image optimization files)
-         * - favicon.ico (favicon file)
-         */
-        '/((?!_next/static|_next/image|favicon.ico).*)',
-    ],
+    matcher: ['/api/:path*'],
 };

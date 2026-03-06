@@ -1,59 +1,42 @@
-import { initDb } from '@/lib/db';
-import { randomUUID } from 'crypto';
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 export class AdvisorService {
     /**
      * Fetches the CRM list of all clients mapped to an Advisor
      */
-    static async getClients(advisorUserId: string) {
-        if (!advisorUserId) throw new Error("Missing Advisor User ID");
+    static async getClients(token: string) {
+        if (!token) throw new Error("Authentication token required");
 
-        const db = await initDb();
+        const response = await fetch(`${BASE_URL}/advisor/clients`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+        });
 
-        // Resolve Advisor Profile
-        const profile = await db.get('SELECT * FROM AdvisorProfile WHERE userId = ?', [advisorUserId]);
-
-        if (!profile) {
-            throw new Error("Advisor Profile not found");
-        }
-
-        // Map clients
-        const clients = await db.all(`
-      SELECT 
-        ac.id as mappingId, 
-        ac.status, 
-        ac.createdAt as joinedAt,
-        u.id as investorId, 
-        u.name as investorName, 
-        u.email,
-        p.totalValue as aum
-      FROM AdvisorClient ac
-      JOIN User u ON ac.investorId = u.id
-      LEFT JOIN Portfolio p ON u.id = p.userId
-      WHERE ac.advisorId = ?
-    `, [profile.id]);
-
-        return clients;
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || 'Failed to fetch clients');
+        return result;
     }
 
     /**
      * Approves a lead/prospect to become an active client
      */
-    static async acceptLead(advisorUserId: string, investorId: string) {
-        const db = await initDb();
-        const profile = await db.get('SELECT id FROM AdvisorProfile WHERE userId = ?', [advisorUserId]);
+    static async acceptLead(token: string, investorId: string) {
+        if (!token) throw new Error("Authentication token required");
 
-        if (!profile) {
-            throw new Error("Advisor Profile not found");
-        }
+        const response = await fetch(`${BASE_URL}/advisor/accept-lead`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ investorId }),
+        });
 
-        const acId = randomUUID();
-
-        await db.run(
-            'INSERT INTO AdvisorClient (id, advisorId, investorId, status) VALUES (?, ?, ?, ?)',
-            [acId, profile.id, investorId, 'ACTIVE']
-        );
-
-        return { success: true, message: 'Investor successfully mapped to your CRM' };
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || 'Failed to accept lead');
+        return result;
     }
 }

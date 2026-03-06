@@ -1,6 +1,5 @@
 "use client";
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     Users,
@@ -26,50 +25,45 @@ import {
     SectionHighlight
 } from "@/components/ui/PremiumUI";
 
-const mentors = [
-    {
-        id: "m1",
-        name: "Dr. Arvinder Singh",
-        title: "Chief Quant Strategist, Capital Wealth",
-        location: "Mumbai, MH",
-        rating: 4.9,
-        mentees: 12,
-        specialty: "Algorithmic Trading & Compliance",
-        matchScore: 98,
-        availability: "Available Next Cycle",
-        bio: "Specializes in guiding elite trainees through the SEBI dual-registration mandate and high-fidelity algorithmic backtesting protocols.",
-        tags: ["Quant Node", "SEBI Authority", "Institutional Alpha"]
-    },
-    {
-        id: "m2",
-        name: "Priya Sharma",
-        title: "Senior Estate Architect",
-        location: "Delhi, DL",
-        rating: 4.8,
-        mentees: 8,
-        specialty: "Estate Trust & Fiduciary Tax",
-        matchScore: 85,
-        availability: "Immediate Uplink",
-        bio: "Focuses on client psychology, onboarding neural workflows, and constructing multi-generational legacy wealth silos.",
-        tags: ["Estate Vault", "Tax Cipher", "Interlinked Relations"]
-    },
-    {
-        id: "m3",
-        name: "Vikram Malhotra",
-        title: "Options Desk Protocol Lead",
-        location: "Bengaluru, KA",
-        rating: 4.9,
-        mentees: 15,
-        specialty: "F&O Risk Mitigation",
-        matchScore: 72,
-        availability: "Waitlisted (14 Days)",
-        bio: "Former institutional desk lead. Mentors exclusively on advanced hedging ciphers and systemic portfolio stress testing.",
-        tags: ["Derivatives", "Risk Sovereign"]
-    }
-];
-
 export default function MentorMatching() {
-    const [selectedMentor, setSelectedMentor] = useState(mentors[0].id);
+    const [mentors, setMentors] = useState<any[]>([]);
+    const [selectedMentor, setSelectedMentor] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchMatches = async () => {
+            try {
+                const token = JSON.parse(localStorage.getItem('ecosystem_user') || '{}').token;
+                const res = await fetch('/api/matching', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                if (data.matches) {
+                    // Bridge backend data to UI fields
+                    const bridged = data.matches.map((m: any) => ({
+                        ...m,
+                        title: `${m.tier} Portfolio Architect`,
+                        location: "Network Node",
+                        mentees: Math.floor(m.rating * 3), // Derived for UI
+                        specialty: m.alphaGenerated > 10 ? "High-Alpha Strategies" : "Conservative Fiduciary",
+                        availability: "Active Uplink",
+                        bio: m.matchReasoning || "Verified institutional advisor with a focus on SEBI-compliant fiduciary standards.",
+                        tags: ["Verified", m.tier, `${m.alphaGenerated}% Alpha`]
+                    }));
+                    setMentors(bridged);
+                    if (bridged.length > 0) setSelectedMentor(bridged[0].id);
+                }
+            } catch (err) {
+                console.error("Match fetch failed:", err);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchMatches();
+    }, []);
+
+    if (isLoading) return <div className="min-h-screen bg-[#0B0B12] flex items-center justify-center font-black text-accent-secondary animate-pulse">SYNCHRONIZING NEURAL NETWORK...</div>;
 
     return (
         <div className="min-h-screen bg-[#0B0B12] text-white p-12 flex flex-col md:flex-row gap-12 relative overflow-hidden">
@@ -103,8 +97,8 @@ export default function MentorMatching() {
                             onClick={() => setSelectedMentor(mentor.id)}
                             layout
                             className={`p-8 rounded-[36px] border cursor-pointer transition-all duration-500 relative overflow-hidden group ${selectedMentor === mentor.id
-                                    ? 'bg-accent-secondary/[0.05] border-accent-secondary shadow-neon-glow !shadow-accent-secondary/5'
-                                    : 'bg-white/[0.02] border-white/5 hover:border-white/20'
+                                ? 'bg-accent-secondary/[0.05] border-accent-secondary shadow-neon-glow !shadow-accent-secondary/5'
+                                : 'bg-white/[0.02] border-white/5 hover:border-white/20'
                                 }`}
                         >
                             <div className="flex justify-between items-start mb-6">
@@ -141,7 +135,7 @@ export default function MentorMatching() {
             {/* Detailed Fiduciary Profile */}
             <div className="w-full md:w-1/2 lg:w-3/5 h-[calc(100vh-120px)] relative z-10">
                 <AnimatePresence mode="wait">
-                    {mentors.map(mentor => mentor.id === selectedMentor && (
+                    {mentors.filter(m => m.id === selectedMentor).map(mentor => (
                         <motion.div
                             key={mentor.id}
                             initial={{ opacity: 0, scale: 0.98, x: 30 }}
@@ -207,7 +201,7 @@ export default function MentorMatching() {
                                     <h3 className="text-[10px] font-black uppercase tracking-[0.5em] text-text-muted border-b border-white/5 pb-4">Specialization Hub</h3>
                                     <p className="text-base leading-loose text-text-secondary font-medium italic opacity-80">{mentor.bio}</p>
                                     <div className="flex flex-wrap gap-4 mt-8">
-                                        {mentor.tags.map(tag => (
+                                        {mentor.tags?.map((tag: string) => (
                                             <NeonBadge key={tag} text={tag} color="purple" className="px-6 py-2" />
                                         ))}
                                     </div>
@@ -250,3 +244,4 @@ export default function MentorMatching() {
         </div>
     );
 }
+

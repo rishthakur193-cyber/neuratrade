@@ -13,11 +13,19 @@ export class AdminService {
         const activeAUM = await db.get('SELECT SUM(totalValue) as total FROM Portfolio');
         const registeredAdvisors = await db.get('SELECT COUNT(*) as count FROM AdvisorProfile');
 
+        const unverifiedAdvisors = await db.all(`
+            SELECT a.id, u.name, u.email, a.sebiRegNo 
+            FROM AdvisorProfile a
+            JOIN User u ON a.userId = u.id
+            WHERE a.isVerified = 0
+        `);
+
         return {
             liveAUM: activeAUM?.total || 45000000000, // Fallback to 450Cr target if db empty
             systemUsers: totalUsers?.count || 0,
             verifiedAdvisors: registeredAdvisors?.count || 0,
             activePortfolios: totalPortfolios?.count || 0,
+            verificationQueue: unverifiedAdvisors || [],
             alerts: [
                 { level: 'HIGH', message: 'Three KYC failures detected for User X91', type: 'FRAUD_RADAR' },
                 { level: 'MED', message: 'Spike in API rate-limit errors from node 4', type: 'INFRA' }

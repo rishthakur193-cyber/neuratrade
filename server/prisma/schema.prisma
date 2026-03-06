@@ -3,62 +3,527 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
-enum Role {
-  USER
-  ADVISOR
-  ADMIN
-}
+// Enum defining the platform roles
+// enum Role {
+//   INVESTOR
+//   ADVISOR
+//   TRAINEE
+//   ADMIN
+//   USER
+// }
 
-enum AdvisorStatus {
-  PENDING
-  VERIFIED
-  REJECTED
-  SUSPENDED
-}
+// Enum defining KYC compliance statuses
+// enum KycStatus {
+//   PENDING
+//   VERIFIED
+//   REJECTED
+// }
 
+// Advisor Status from original server schema
+// enum AdvisorStatus {
+//   PENDING
+//   VERIFIED
+//   REJECTED
+//   SUSPENDED
+// }
+
+// Core User Account
 model User {
-  id            String   @id @default(uuid())
-  email         String   @unique
-  password      String
-  fullName      String
-  role          Role     @default(USER)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  // Profile data
-  phone         String?
-  avatarUrl     String?
+  id                String    @id @default(uuid())
+  name              String
+  email             String    @unique
+  passwordHash      String
+  role              String    @default("INVESTOR")
+  kycStatus         String    @default("PENDING")
+  kycDocuments      String    @default("[]")  // JSON stringified array of GCS paths or local file paths
+  twoFactorEnabled  Boolean   @default(false)
+  twoFactorSecret   String?                 // TOTP secret
   
+  // Fields preserved from server schema
+  phone             String?
+  avatarUrl         String?
+  
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Role-specific Profiles
+  investorProfile   InvestorProfile?
+  advisorProfile    AdvisorProfile?
+  traineeProfile    TraineeProfile?
+
   // Relations
-  advisorProfile AdvisorProfile?
-  investments    Investment[]
+  portfolios        Portfolio[]
+  messagesSent      Message[]   @relation("Sender")
+  messagesRcvd      Message[]   @relation("Receiver")
+  auditLogs         AuditLog[]
+  courseProgress    CourseProgress[]
+  conversations     ConversationParticipant[]
+  communityPosts    CommunityPost[]
+  journey           InvestorJourney?
+  recoveryProgress  RecoveryProgress?
+  
+  // Preserved relation from server schema
+  investments       Investment[]
+  advisorClients    AdvisorClient[]
+  platformSubscription PlatformSubscription?
 }
 
+// Profile for Investors
+model InvestorProfile {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  riskTolerance   String   @default("Moderate")
+  totalInvested   Float    @default(0.0)
+  currentValue    Float    @default(0.0)
+  
+  // Risk Profiling Fields
+  capitalRange        String?
+  maxLossTolerance    Int?
+  investmentHorizon   String?
+  tradingFrequency    String?
+  experienceLevel     String?
+  emotionalTolerance  String?
+  investorType        String?
+  riskCategory        String?
+  preferredStrategy   String?
+  preferredStyle      String?   @default("MANUAL")
+  riskScore           Int?      @default(0)
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  portfolios      Portfolio[]
+  subscriptions   AdvisorSubscription[]
+}
+
+// Profile for SEBI Registered Advisors
 model AdvisorProfile {
-  id                String        @id @default(uuid())
-  userId            String        @unique
-  user              User          @relation(fields: [userId], references: [id])
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
-  sebiRegNo         String        @unique
-  specialization    String[]
+  sebiRegNo       String   @unique
+  tier            String   @default("Registered")
+  aumManaged      Float    @default(0.0)
+  alphaGenerated  Float    @default(0.0)
+  rating          Float    @default(0.0)
+  isVerified      Boolean  @default(false)
+  classification  String   @default("COMMUNITY_STRATEGIST") // SEBI_REGISTERED, COMMUNITY_STRATEGIST
+
+  // Fields preserved from server schema
+  specialization    String? 
   bio               String?
-  experienceYears   Int
-  status            AdvisorStatus @default(PENDING)
-  
-  // Performance Metrics
+  experienceYears   Int?
+  status            String @default("PENDING")
   sharpeRatio       Float?
-  aum               Float?        // in INR Cr
+  aum               Float?        // in INR Cr (server legacy)
   threeYearReturns  Float?
-  
-  // Relations
-  clients           Investment[]
   verifiedAt        DateTime?
+  
+  strategies      Strategy[]
+  subscribers     AdvisorSubscription[]
+  
+  // Intelligence & Verification Relations
+  strategyDNA       AdvisorStrategyDNA?
+  trustScore        AdvisorTrustScore?
+  performance       AdvisorPerformance?
+  scamFlags         ScamFlag[]
+  brokerLink        AdvisorBrokerLink?
+  verifiedTrades    VerifiedTrade[]
+  recommendations   AdvisorRecommendation[]
+  verificationBadge AdvisorVerificationBadge?
+
+  // Preserved relation from server schema
+  clients           Investment[]
+  advisorClients    AdvisorClient[]
 }
 
+model AdvisorStrategyDNA {
+  id                    String   @id @default(uuid())
+  advisorId             String   @unique
+  advisor               AdvisorProfile @relation(fields: [advisorId], references: [id], onDelete: Cascade)
+  
+  strategyType          String   @default("Swing")
+  avgHoldingDays        Float    @default(0)
+  avgRiskPerTrade       Float    @default(0)
+  historicalMaxDrawdown Float    @default(0)
+  avgReturnPerTrade     Float    @default(0)
+  winRate               Float    @default(0)
+  consistencyScore      Float    @default(0)
+  capitalMin            Float    @default(0)
+  capitalMax            Float    @default(0)
+  
+  updatedAt             DateTime @default(now())
+}
+
+model AdvisorTrustScore {
+  id                  String   @id @default(uuid())
+  advisorId           String   @unique
+  advisor             AdvisorProfile @relation(fields: [advisorId], references: [id], onDelete: Cascade)
+  
+  consistencyScore    Float    @default(0)
+  riskManagementScore Float    @default(0)
+  clientFeedbackScore Float    @default(0)
+  transparencyScore   Float    @default(0)
+  overallScore        Float    @default(0)
+  
+  updatedAt           DateTime @default(now())
+}
+
+model AdvisorPerformance {
+  id                  String   @id @default(uuid())
+  advisorId           String   @unique
+  advisor             AdvisorProfile @relation(fields: [advisorId], references: [id], onDelete: Cascade)
+  
+  winRate             Float    @default(0.0) // Percentage 0-100
+  totalTrades         Int      @default(0)
+  winningTrades       Int      @default(0)
+  losingTrades        Int      @default(0)
+  
+  profitFactor        Float    @default(0.0) // Gross Profit / Gross Loss
+  maxDrawdown         Float    @default(0.0) // Percentage Peak to Trough
+  avgReturnPerTrade   Float    @default(0.0)
+  
+  equityCurve         String   @default("[]") // JSON stringified array of points [{date, balance}]
+
+  updatedAt           DateTime @default(now())
+}
+
+model AdvisorRecommendation {
+  id              String   @id @default(uuid())
+  advisorId       String
+  advisor         AdvisorProfile @relation(fields: [advisorId], references: [id], onDelete: Cascade)
+  
+  symbol          String
+  entryPrice      Float
+  stopLoss        Float
+  target          Float
+  exitPrice       Float?
+  result          String?  // WIN, LOSS, BREAKEVEN
+  returnPct       Float?
+  holdingDays     Int      @default(0)
+  
+  riskLevel       String   @default("MEDIUM") // LOW, MEDIUM, HIGH
+  tradeReason     String?
+  isActiveSignal  Boolean  @default(true)
+  
+  isDirectSignal     Boolean  @default(false)
+  disclaimerAccepted Boolean  @default(false)
+
+  // Tracking Fields
+  entryHit        Boolean  @default(false)
+  entryHitAt      DateTime?
+  targetHit       Boolean  @default(false)
+  targetHitAt     DateTime?
+  stopLossHit     Boolean  @default(false)
+  stopLossHitAt   DateTime?
+  
+  timeToExitMin   Float?   // Time taken to exit in minutes
+  riskRewardRatio Float?   // (target - entry) / (entry - stopLoss)
+
+  tradedAt        DateTime @default(now())
+  closedAt        DateTime?
+
+  verifiedTrades  VerifiedTrade[]
+}
+
+model VerifiedTrade {
+  id                  String   @id @default(uuid())
+  advisorId           String
+  advisor             AdvisorProfile @relation(fields: [advisorId], references: [id], onDelete: Cascade)
+  
+  recommendationId    String?
+  recommendation      AdvisorRecommendation? @relation(fields: [recommendationId], references: [id])
+  
+  symbol              String
+  exchange            String   @default("NSE")
+  brokerOrderId       String?
+  entryPrice          Float
+  exitPrice           Float?
+  stopLoss            Float?
+  target              Float?
+  qty                 Int      @default(1)
+  returnPct           Float?
+  holdingDays         Float    @default(0)
+  result              String?
+  verificationStatus  String   @default("UNVERIFIED") // BROKER_VERIFIED, UNVERIFIED, MISMATCH
+  brokerSource        String   @default("MANUAL")
+  mismatchReason      String?
+  
+  tradedAt            DateTime @default(now())
+  closedAt            DateTime?
+  brokerFetchedAt     DateTime?
+}
+
+model AdvisorVerificationBadge {
+  id                  String   @id @default(uuid())
+  advisorId           String   @unique
+  advisor             AdvisorProfile @relation(fields: [advisorId], references: [id], onDelete: Cascade)
+  
+  badgeLevel          String   @default("UNVERIFIED") // PLATINUM, GOLD, SILVER, UNVERIFIED
+  verifiedTradeCount  Int      @default(0)
+  totalTradeCount     Int      @default(0)
+  verificationPct     Float    @default(0)
+  
+  lastVerifiedAt      DateTime?
+  updatedAt           DateTime @default(now())
+}
+
+model AdvisorBrokerLink {
+  id              String   @id @default(uuid())
+  advisorId       String   @unique
+  advisor         AdvisorProfile @relation(fields: [advisorId], references: [id], onDelete: Cascade)
+  
+  brokerName      String   @default("AngelOne")
+  clientCode      String
+  encryptedToken  String?
+  feedToken       String?
+  isActive        Boolean  @default(true)
+  
+  linkedAt        DateTime @default(now())
+  lastSyncAt      DateTime?
+}
+
+model ScamFlag {
+  id              String   @id @default(uuid())
+  advisorId       String
+  advisor         AdvisorProfile @relation(fields: [advisorId], references: [id], onDelete: Cascade)
+  
+  flagType        String
+  severity        String   @default("MEDIUM") // LOW, MEDIUM, HIGH, CRITICAL
+  status          String   @default("PENDING") // PENDING, RESOLVED, DISMISSED
+  description     String
+  
+  detectedAt      DateTime @default(now())
+
+  @@unique([advisorId, flagType])
+}
+
+model InvestorJourney {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  xp              Int      @default(0)
+  achievements    String   @default("[]") // JSON stringified array of Achievement IDs
+  lastActivityAt  DateTime @default(now())
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model RecoveryProgress {
+  id                  String   @id @default(uuid())
+  userId              String   @unique
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  currentStage        String   @default("LEARN") // LEARN, SIMULATE, INVEST
+  stageProgress       Int      @default(0)
+  learnScore          Int      @default(0)
+  simulationPnl       Float    @default(0)
+  disciplineScore     Int      @default(0)
+  capitalUnlocked     Float    @default(0)
+  totalSimTrades      Int      @default(0)
+  profitableSimTrades Int      @default(0)
+  
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model CommunityPost {
+  id              String   @id @default(uuid())
+  authorId        String
+  author          User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorType      String   @default("INVESTOR") // INVESTOR, ADVISOR
+  authorName      String
+  
+  content         String
+  tags            String   @default("[]") // JSON stringified
+  likes           Int      @default(0)
+  parentId        String?
+  parent          CommunityPost? @relation("Thread", fields: [parentId], references: [id])
+  replies         CommunityPost[] @relation("Thread")
+  
+  isScamFlagged   Boolean  @default(false)
+  aiRiskScore     Int      @default(0)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// Profile for Aspiring Advisors
+model TraineeProfile {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  nismProgress    Int      @default(0)
+  milestonesDone  Int      @default(0)
+  mentorId        String?
+}
+
+// Investment Strategy / Portfolio Model created by Advisors
+model Strategy {
+  id              String   @id @default(uuid())
+  advisorId       String
+  advisor         AdvisorProfile @relation(fields: [advisorId], references: [id], onDelete: Cascade)
+  
+  name            String
+  type            String
+  riskLevel       String
+  cagr            Float
+  minInvestment   Float
+  description     String
+  tags            String
+  isActive        Boolean  @default(true)
+  
+  createdAt       DateTime @default(now())
+  
+  portfolios      Portfolio[]
+}
+
+// Mapping of Investor investments into Strategies
+model Portfolio {
+  id              String   @id @default(uuid())
+  investorId      String?
+  investor        InvestorProfile? @relation(fields: [investorId], references: [id], onDelete: Cascade)
+  
+  strategyId      String?
+  strategy        Strategy? @relation(fields: [strategyId], references: [id], onDelete: Restrict)
+  userId          String?
+  user            User?    @relation(fields: [userId], references: [id])
+  
+  name            String   @default("Main Portfolio")
+  investedAmount  Float    @default(0)
+  totalValue      Float    @default(0)
+  riskScore       Float    @default(0)
+  
+  holdings        Holding[]
+  transactions    TransactionHistory[]
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Holding {
+  id              String   @id @default(uuid())
+  portfolioId     String
+  portfolio       Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+  assetSymbol     String
+  assetType       String   @default("EQUITY")
+  quantity        Float    @default(0)
+  averagePrice    Float    @default(0)
+  currentPrice    Float    @default(0)
+}
+
+model TransactionHistory {
+  id              String   @id @default(uuid())
+  portfolioId     String
+  portfolio       Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+  assetSymbol     String
+  type            String   // BUY or SELL
+  quantity        Float
+  price           Float
+  date            DateTime @default(now())
+}
+
+model AdvisorClient {
+  id              String   @id @default(uuid())
+  advisorId       String
+  advisor         AdvisorProfile @relation(fields: [advisorId], references: [id], onDelete: Cascade)
+  investorId      String
+  investor        User     @relation(fields: [investorId], references: [id], onDelete: Cascade)
+  status          String   @default("ACTIVE")
+  createdAt       DateTime @default(now())
+}
+
+model PlatformSubscription {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tier            String   @default("Free")
+  status          String   @default("ACTIVE")
+  expiresAt       DateTime?
+  updatedAt       DateTime @default(now())
+}
+
+// Communication Hub Messages
+model Message {
+  id              String   @id @default(uuid())
+  senderId        String
+  sender          User     @relation("Sender", fields: [senderId], references: [id])
+  
+  receiverId      String
+  receiver        User     @relation("Receiver", fields: [receiverId], references: [id])
+  
+  content         String
+  isAiSummary     Boolean  @default(false)
+  createdAt       DateTime @default(now())
+}
+
+// Audit Log
+model AuditLog {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action      String
+  details     String?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+}
+
+model Conversation {
+  id              String                   @id @default(uuid())
+  participants    ConversationParticipant[]
+  lastMessageAt   DateTime                 @default(now())
+  createdAt       DateTime                 @default(now())
+}
+
+model ConversationParticipant {
+  conversationId  String
+  conversation    Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@id([conversationId, userId])
+}
+
+model AdvisorSubscription {
+  id              String   @id @default(uuid())
+  investorId      String
+  investor        InvestorProfile @relation(fields: [investorId], references: [id], onDelete: Cascade)
+  
+  advisorId       String
+  advisor         AdvisorProfile  @relation(fields: [advisorId], references: [id], onDelete: Cascade)
+  
+  plan            String
+  status          String   @default("ACTIVE")
+  startDate       DateTime @default(now())
+  endDate         DateTime?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([investorId, advisorId])
+}
+
+model CourseProgress {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId      String
+  progress      Float    @default(0)
+  lastAccessed  DateTime @default(now())
+  @@unique([userId, courseId])
+}
+
+// Preserved from server schema
 model Investment {
   id          String   @id @default(uuid())
   userId      String
@@ -67,7 +532,7 @@ model Investment {
   advisor     AdvisorProfile @relation(fields: [advisorId], references: [id])
   
   amount      Float
-  status      String   // e.g., ACTIVE, CLOSED
+  status      String
   startDate   DateTime @default(now())
   endDate     DateTime?
 }

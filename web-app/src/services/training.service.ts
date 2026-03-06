@@ -1,53 +1,36 @@
-import { initDb } from '@/lib/db';
-import { randomUUID } from 'crypto';
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 export class TrainingService {
-    /**
-     * Retrieves the 90-Day SEBI Journey course progress for a trainee.
-     */
-    static async getProgress(userId: string) {
-        if (!userId) throw new Error("Missing user ID");
+    static async getProgress(token: string) {
+        if (!token) throw new Error("Authentication token required");
 
-        const db = await initDb();
+        const response = await fetch(`${BASE_URL}/training/progress`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+        });
 
-        // Attempt to fetch existing progress
-        let progressRecords = await db.all('SELECT * FROM CourseProgress WHERE userId = ?', [userId]);
-
-        // If no progress seeded, initiate the default 90D journey
-        if (!progressRecords || progressRecords.length === 0) {
-            await this.initializeJourney(userId, db);
-            progressRecords = await db.all('SELECT * FROM CourseProgress WHERE userId = ?', [userId]);
-        }
-
-        return progressRecords;
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || 'Failed to fetch training progress');
+        return result;
     }
 
-    /**
-     * Updates a specific course percentage for a trainee.
-     */
-    static async updateProgress(userId: string, courseId: string, progress: number) {
-        const db = await initDb();
+    static async updateProgress(token: string, courseId: string, increment: number) {
+        if (!token) throw new Error("Authentication token required");
 
-        await db.run(
-            'UPDATE CourseProgress SET progress = ?, lastAccessed = CURRENT_TIMESTAMP WHERE userId = ? AND courseId = ?',
-            [progress, userId, courseId]
-        );
+        const response = await fetch(`${BASE_URL}/training/progress`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ courseId, increment }),
+        });
 
-        return { success: true, message: 'Progress recorded' };
-    }
-
-    private static async initializeJourney(userId: string, db: any) {
-        const coreCourses = [
-            { id: 'NISM-XA', name: 'NISM Series X-A: Investment Adviser (Level 1)' },
-            { id: 'SEBI-COMP', name: 'SEBI Compliance & Fiduciary Duties' },
-            { id: 'CLIENT-PSY', name: 'Client Psychology & Behavioral Finance' }
-        ];
-
-        for (const course of coreCourses) {
-            await db.run(
-                'INSERT INTO CourseProgress (id, userId, courseId, progress) VALUES (?, ?, ?, ?)',
-                [randomUUID(), userId, course.id, 0]
-            );
-        }
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || 'Failed to update progress');
+        return result;
     }
 }

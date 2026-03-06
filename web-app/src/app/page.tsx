@@ -21,8 +21,31 @@ import {
   NeonBadge,
   SectionHighlight
 } from "@/components/ui/PremiumUI";
+import AISupportAgent from "@/components/support/AISupportAgent";
 
 export default function Home() {
+  const [stats, setStats] = React.useState({
+    aum: "₹2,480Cr+",
+    advisors: "1,240+",
+    users: "15,000+",
+    trustScore: "4.9/5"
+  });
+
+  React.useEffect(() => {
+    fetch('/api/public/stats')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setStats({
+            aum: data.aum,
+            advisors: data.advisors,
+            users: data.users,
+            trustScore: data.trustScore
+          });
+        }
+      })
+      .catch((e) => console.error("Stats Fetch Error:", e));
+  }, []);
   return (
     <div className="min-h-screen bg-[#0B0B12] text-white overflow-x-hidden selection:bg-accent-primary/30">
       {/* Dynamic Background */}
@@ -102,10 +125,10 @@ export default function Home() {
 
           {/* KPI Ribbon */}
           <div className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-4 gap-4 px-4">
-            <KPICard label="Total Assets Monitored" value="₹2,480Cr+" sub="Live Ecosystem Data" />
-            <KPICard label="Verified Advisors" value="1,240+" sub="SEBI Registered Only" />
-            <KPICard label="Investor Trust" value="4.9/5" sub="Certified Reviews" />
-            <KPICard label="System Security" value="SOC-2" sub="Bank-Grade Protection" />
+            <KPICard label="Total Assets Monitored" value={stats.aum} sub="Live Ecosystem Data" />
+            <KPICard label="Verified Advisors" value={stats.advisors} sub="SEBI Registered Only" />
+            <KPICard label="Investor Trust" value={stats.trustScore} sub="Certified Reviews" />
+            <KPICard label="Active Investors" value={stats.users} sub="Institutional Scale" />
           </div>
         </section>
 
@@ -181,6 +204,19 @@ export default function Home() {
           </div>
         </section>
 
+        {/* HOW IT WORKS */}
+        <section className="px-6 py-32 bg-black/40">
+          <div className="max-w-7xl mx-auto">
+            <h2 className="text-4xl md:text-5xl font-black text-center mb-16">HOW THE <span className="text-accent-primary">ECOSYSTEM</span> WORKS</h2>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <StepItem number="01" title="Register" desc="Onboard as an Investor or Advisor with SEBI verification." />
+              <StepItem number="02" title="Verify" desc="Our engine audits performance logs directly from the broker." />
+              <StepItem number="03" title="Matches" desc="AI Risk Engine connects you with the ideal strategy." />
+              <StepItem number="04" title="Prosper" desc="Invest with confidence backed by transparent data." />
+            </div>
+          </div>
+        </section>
+
         {/* CTA SECTION */}
         <section className="px-6 py-40 md:px-12">
           <GlassCard className="max-w-6xl mx-auto p-12 md:p-24 text-center relative overflow-hidden group" neon>
@@ -196,6 +232,9 @@ export default function Home() {
           </GlassCard>
         </section>
       </main>
+
+      {/* AI SUPPORT AGENT */}
+      <AISupportAgent />
 
       {/* FOOTER */}
       <footer className="px-12 py-20 border-t border-white/5 bg-background-primary">
@@ -213,25 +252,35 @@ export default function Home() {
           </div>
 
           <div>
-            <h4 className="font-bold mb-6 text-white uppercase tracking-widest text-xs">Resources</h4>
+            <h4 className="font-bold mb-6 text-white uppercase tracking-widest text-xs">Support</h4>
             <ul className="space-y-4 text-sm text-text-muted">
-              <li><a href="#" className="hover:text-accent-primary transition-colors">Risk Engine Documentation</a></li>
-              <li><a href="#" className="hover:text-accent-primary transition-colors">SEBI Compliance Guide</a></li>
-              <li><a href="#" className="hover:text-accent-primary transition-colors">Platform Security</a></li>
+              <li><a href="/support" className="hover:text-accent-primary transition-colors">Help Center</a></li>
+              <li><a href="/rules" className="hover:text-accent-primary transition-colors">Platform Rules</a></li>
+              <li><a href="/trust-center" className="hover:text-accent-primary transition-colors">Trust & Verification</a></li>
             </ul>
           </div>
 
           <div>
             <h4 className="font-bold mb-6 text-white uppercase tracking-widest text-xs">Legal</h4>
             <ul className="space-y-4 text-sm text-text-muted">
-              <li><a href="#" className="hover:text-accent-primary transition-colors">Privacy Framework</a></li>
-              <li><a href="#" className="hover:text-accent-primary transition-colors">Terms of Engagement</a></li>
-              <li><a href="#" className="hover:text-accent-primary transition-colors">Trust Center</a></li>
+              <li><a href="/rules" className="hover:text-accent-primary transition-colors">Risk Disclaimer</a></li>
+              <li><a href="/rules" className="hover:text-accent-primary transition-colors">Terms of Engagement</a></li>
+              <li><a href="/rules" className="hover:text-accent-primary transition-colors">Privacy Framework</a></li>
             </ul>
           </div>
         </div>
       </footer>
     </div>
+  );
+}
+
+function StepItem({ number, title, desc }: { number: string; title: string; desc: string }) {
+  return (
+    <GlassCard className="p-8 flex flex-col items-start gap-4" hoverEffect={true}>
+      <div className="text-4xl font-black text-white/10 group-hover:text-accent-primary/30 transition-colors">{number}</div>
+      <h3 className="text-xl font-bold">{title}</h3>
+      <p className="text-sm text-text-muted leading-relaxed">{desc}</p>
+    </GlassCard>
   );
 }
 

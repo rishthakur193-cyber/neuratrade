@@ -1,0 +1,43 @@
+debug-reg.ts(2,29): error TS2307: Cannot find module '../src/services/auth.service' or its corresponding type declarations.
+src/app/api/advisor/discovery/route.ts(11,81): error TS2554: Expected 1 arguments, but got 2.
+src/app/api/auth/register/route.ts(12,57): error TS2554: Expected 1 arguments, but got 2.
+src/app/api/auth/reset-password/route.ts(9,42): error TS2339: Property 'resetPassword' does not exist on type 'typeof AuthService'.
+src/app/api/decision-intelligence/compare/route.ts(13,48): error TS2339: Property 'getMockDNASet' does not exist on type 'typeof AdvisorStrategyService'.
+src/app/api/decision-intelligence/compare/route.ts(14,45): error TS2339: Property 'getMockTrustScores' does not exist on type 'typeof TrustScoreService'.
+src/app/api/decision-intelligence/compare/route.ts(17,38): error TS7006: Parameter 'd' implicitly has an 'any' type.
+src/app/api/decision-intelligence/compare/route.ts(18,42): error TS7006: Parameter 't' implicitly has an 'any' type.
+src/app/api/decision-intelligence/flags/route.ts(8,47): error TS2339: Property 'getMockTrustScores' does not exist on type 'typeof TrustScoreService'.
+src/app/api/decision-intelligence/flags/route.ts(9,44): error TS2339: Property 'getMockFlags' does not exist on type 'typeof ScamDetectionService'.
+src/app/api/decision-intelligence/profile/route.ts(3,26): error TS2307: Cannot find module 'next-auth/jwt' or its corresponding type declarations.
+src/app/api/ecosystem/community/route.ts(7,59): error TS2554: Expected 0-1 arguments, but got 2.
+src/app/api/ecosystem/community/route.ts(10,60): error TS2551: Property 'getMockPosts' does not exist on type 'typeof CommunityService'. Did you mean 'getPosts'?
+src/app/api/ecosystem/community/route.ts(18,78): error TS2554: Expected 2 arguments, but got 6.
+src/app/api/ecosystem/discover/route.ts(16,62): error TS2554: Expected 1 arguments, but got 2.
+src/app/api/ecosystem/journey/route.ts(10,68): error TS2551: Property 'getMockJourney' does not exist on type 'typeof InvestorJourneyService'. Did you mean 'getJourney'?
+src/app/api/ecosystem/journey/route.ts(17,56): error TS2339: Property 'awardXp' does not exist on type 'typeof InvestorJourneyService'.
+src/app/api/ecosystem/strategy-intel/route.ts(10,51): error TS2339: Property 'getMockRankings' does not exist on type 'typeof StrategyIntelligenceService'.
+src/app/api/ecosystem/strategy-intel/route.ts(11,59): error TS2339: Property 'MOCK_MOMENTUM_ADVISORS' does not exist on type 'typeof StrategyIntelligenceService'.
+src/app/api/ecosystem/strategy-intel/route.ts(12,58): error TS2339: Property 'getMockRankings' does not exist on type 'typeof StrategyIntelligenceService'.
+src/app/api/ecosystem/strategy-intel/route.ts(12,83): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/app/api/kyc/upload/route.ts(54,42): error TS2339: Property 'updateKyc' does not exist on type 'typeof AuthService'.
+src/app/api/payments/subscribe/route.ts(2,26): error TS2307: Cannot find module 'next-auth/jwt' or its corresponding type declarations.
+src/app/api/portfolio/trade/route.ts(36,89): error TS2554: Expected 2 arguments, but got 3.
+src/app/api/recovery/progress/route.ts(11,66): error TS2551: Property 'getMockProgress' does not exist on type 'typeof RecoveryPathService'. Did you mean 'getProgress'?
+src/app/api/recovery/progress/route.ts(23,39): error TS2339: Property 'updateLearnScore' does not exist on type 'typeof RecoveryPathService'.
+src/app/api/recovery/trust-signals/route.ts(14,42): error TS2339: Property 'getMockSignals' does not exist on type 'typeof TrustSignalsService'.
+src/app/api/recovery/trust-signals/route.ts(15,41): error TS2339: Property 'getMockReport' does not exist on type 'typeof TrustSignalsService'.
+src/app/training/mentor-match/page.tsx(203,58): error TS7006: Parameter 'tag' implicitly has an 'any' type.
+src/app/training/page.tsx(104,26): error TS2552: Cannot find name 'motion'. Did you mean 'Option'?
+src/app/training/page.tsx(145,30): error TS2552: Cannot find name 'motion'. Did you mean 'Option'?
+src/app/training/page.tsx(196,31): error TS2552: Cannot find name 'motion'. Did you mean 'Option'?
+src/app/training/page.tsx(230,46): error TS2552: Cannot find name 'motion'. Did you mean 'Option'?
+src/services/compatibility.service.ts(146,46): error TS2339: Property 'getMockDNASet' does not exist on type 'typeof AdvisorStrategyService'.
+src/services/compatibility.service.ts(148,52): error TS2551: Property 'getAllDNA' does not exist on type 'typeof AdvisorStrategyService'. Did you mean 'getDNA'?
+src/services/compatibility.service.ts(150,50): error TS2339: Property 'getMockDNASet' does not exist on type 'typeof AdvisorStrategyService'.
+src/services/compatibility.service.ts(154,15): error TS2322: Type '{ advisorId: string; advisorName: string; sebiRegNo: string; compatibilityScore: Promise<number>; breakdown: { riskCompatibility: number; strategyCompatibility: number; capitalCompatibility: number; consistencyScore: number; }; explanation: string[]; warnings: string[]; dna: StrategyDNA; }[]' is not assignable to type 'CompatibilityResult[]'.
+  Type '{ advisorId: string; advisorName: string; sebiRegNo: string; compatibilityScore: Promise<number>; breakdown: { riskCompatibility: number; strategyCompatibility: number; capitalCompatibility: number; consistencyScore: number; }; explanation: string[]; warnings: string[]; dna: StrategyDNA; }' is not assignable to type 'CompatibilityResult'.
+    Types of property 'compatibilityScore' are incompatible.
+      Type 'Promise<number>' is not assignable to type 'number'.
+src/services/compatibility.service.ts(160,50): error TS2554: Expected 2 arguments, but got 1.
+src/services/risk-simulation.service.ts(50,52): error TS2339: Property 'getMockDNASet' does not exist on type 'typeof AdvisorStrategyService'.
+src/services/risk-simulation.service.ts(51,40): error TS7006: Parameter 'd' implicitly has an 'any' type.

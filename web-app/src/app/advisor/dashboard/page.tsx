@@ -29,18 +29,22 @@ import {
     NeonBadge,
     SectionHighlight
 } from "@/components/ui/PremiumUI";
+import { SignalPublisher } from "@/components/advisor/SignalPublisher";
 
 export default function AdvisorDashboard() {
     const [userData, setUserData] = useState<any>(null);
     const [clientData, setClientData] = useState<any[]>([]);
+    const [strategies, setStrategies] = useState<any[]>([]);
+    const [leads, setLeads] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const token = localStorage.getItem('token');
-        if (!token) {
+        const storedUser = localStorage.getItem('ecosystem_user');
+        if (!storedUser) {
             window.location.href = '/auth/login';
             return;
         }
+        const { token } = JSON.parse(storedUser);
 
         async function fetchData() {
             try {
@@ -58,6 +62,22 @@ export default function AdvisorDashboard() {
                 if (clientsRes.ok) {
                     const data = await clientsRes.json();
                     setClientData(data.clients || []);
+                }
+
+                const stratRes = await fetch('/api/advisor/strategies', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (stratRes.ok) {
+                    const data = await stratRes.json();
+                    if (data.success) setStrategies(data.strategies || []);
+                }
+
+                const leadsRes = await fetch('/api/advisor/leads', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (leadsRes.ok) {
+                    const data = await leadsRes.json();
+                    if (data.success) setLeads(data.leads || []);
                 }
             } catch (error) {
                 console.error("Advisor Dashboard Fetch Error:", error);
@@ -229,11 +249,18 @@ export default function AdvisorDashboard() {
                                 High Intent Leads
                             </h3>
                             <div className="space-y-4">
-                                <LeadItem name="Amitabh Malhotra" profile="Institutional / Family Office" match={98} />
-                                <LeadItem name="Saira Banu" profile="Global Tech Exec" match={94} />
-                                <LeadItem name="Vikram Rathore" profile="Conservative Alpha" match={89} />
+                                {leads.length > 0 ? (
+                                    leads.map(lead => (
+                                        <LeadItem key={lead.id} name={lead.name} profile={lead.profile} match={lead.match} />
+                                    ))
+                                ) : (
+                                    <div className="text-text-muted text-xs italic opacity-60">No matched leads at this moment.</div>
+                                )}
                             </div>
                             <PremiumButton variant="secondary" className="w-full">Open Marketplace Hub</PremiumButton>
+                            <div className="mt-8">
+                                <SignalPublisher />
+                            </div>
                         </div>
                     </div>
 
@@ -248,9 +275,19 @@ export default function AdvisorDashboard() {
                                 </div>
                             </div>
                             <div className="space-y-4">
-                                <StrategyRow name="Quant-Alpha institutional" aum="₹42Cr" ret="+24.2%" risk="MOD" />
-                                <StrategyRow name="Global Tech Composite" aum="₹28Cr" ret="+18.5%" risk="HIGH" />
-                                <StrategyRow name="Yield Guard Bonds" aum="₹15Cr" ret="+9.2%" risk="LOW" />
+                                {strategies.length > 0 ? (
+                                    strategies.map((strat: any) => (
+                                        <StrategyRow
+                                            key={strat.id}
+                                            name={strat.strategyType}
+                                            aum={`₹${(strat.capitalMin / 10000000).toFixed(1)}Cr`}
+                                            ret={`+${strat.avgReturnPerTrade}%`}
+                                            risk={strat.avgRiskPerTrade}
+                                        />
+                                    ))
+                                ) : (
+                                    <div className="text-text-muted text-xs italic opacity-60">No active strategies configured.</div>
+                                )}
                             </div>
                         </GlassCard>
 
@@ -291,8 +328,8 @@ function SidebarItem({ icon: Icon, label, active = false, onClick }: { icon: any
         <div
             onClick={onClick}
             className={`flex items-center gap-4 px-6 py-3.5 rounded-2xl cursor-pointer transition-all duration-300 relative group ${active
-                    ? "bg-accent-secondary/10 text-white font-bold"
-                    : "text-text-muted hover:text-white"
+                ? "bg-accent-secondary/10 text-white font-bold"
+                : "text-text-muted hover:text-white"
                 }`}>
             {active && (
                 <motion.div

@@ -1,0 +1,18 @@
+{
+    "name": "neuratrade-dev-agent",
+    "version": "1.0.0",
+    "description": "Self-Reporting Autonomous Development Agent for NeuraTrade",
+    "main": "run.ts",
+    "scripts": {
+        "start": "ts-node --esm run.ts",
+        "status": "ts-node --esm run.ts --status",
+        "log": "ts-node --esm run.ts --log",
+        "dev": "ts-node-dev --respawn --esm run.ts"
+    },
+    "dependencies": {},
+    "devDependencies": {
+        "@types/node": "^20.0.0",
+        "ts-node": "^10.9.2",
+        "typescript": "^5.3.3"
+    }
+}

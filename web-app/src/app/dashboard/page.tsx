@@ -29,21 +29,24 @@ import {
 } from "@/components/ui/PremiumUI";
 import EcosystemMap from "../../components/EcosystemMap";
 import { useMarketData } from "@/hooks/useMarketData";
+import { MarketDecisionFeed } from "@/components/dashboard/MarketDecisionFeed";
 
 export default function DashboardPage() {
     const [userData, setUserData] = useState<any>(null);
     const [portfolioData, setPortfolioData] = useState<any>(null);
+    const [verifiedAdvisors, setVerifiedAdvisors] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [is2FAModalOpen, setIs2FAModalOpen] = useState(false);
 
     const { data: marketData, connected: wsConnected } = useMarketData(['RELIANCE', 'TATASTEEL', 'INFY', 'HDFCBANK']);
 
     useEffect(() => {
-        const token = localStorage.getItem('token');
-        if (!token) {
+        const storedUser = localStorage.getItem('ecosystem_user');
+        if (!storedUser) {
             window.location.href = '/auth/login';
             return;
         }
+        const { token } = JSON.parse(storedUser);
 
         async function fetchData() {
             try {
@@ -61,6 +64,14 @@ export default function DashboardPage() {
                 if (portRes.ok) {
                     const port = await portRes.json();
                     setPortfolioData(port);
+                }
+
+                const advRes = await fetch('/api/advisor-intelligence/discovery', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (advRes.ok) {
+                    const adv = await advRes.json();
+                    setVerifiedAdvisors(adv.slice(0, 3));
                 }
             } catch (error) {
                 console.error("Dashboard Fetch Error:", error);
@@ -198,7 +209,7 @@ export default function DashboardPage() {
                                     <div className="text-right">
                                         <div className="flex items-center gap-2 text-success font-black text-2xl italic">
                                             <TrendingUp size={24} />
-                                            <span>+14.2%</span>
+                                            <span>{portfolioData?.portfolio?.dailyChange >= 0 ? '+' : ''}{portfolioData?.portfolio?.dailyChange || 0}%</span>
                                         </div>
                                         <p className="text-[9px] text-text-muted font-black uppercase tracking-[0.2em] mt-1 opacity-60">Delta / 30D</p>
                                     </div>
@@ -207,11 +218,11 @@ export default function DashboardPage() {
                                 <div className="mt-8 lg:mt-12 grid grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-10 pt-8 lg:pt-10 border-t border-white/5 relative z-10" >
                                     <div>
                                         <p className="text-[9px] font-black text-text-muted uppercase tracking-[0.3em] mb-2 opacity-60">Risk Alpha</p>
-                                        <span className="text-2xl font-black tracking-tight text-accent-cyan">24.5%</span>
+                                        <span className="text-2xl font-black tracking-tight text-accent-cyan">{portfolioData?.portfolio?.riskScore || 0}%</span>
                                     </div>
                                     <div>
                                         <p className="text-[9px] font-black text-text-muted uppercase tracking-[0.3em] mb-2 opacity-60">Fiduciary Grade</p>
-                                        <span className="text-2xl font-black tracking-tight text-accent-secondary">AA+</span>
+                                        <span className="text-2xl font-black tracking-tight text-accent-secondary">{portfolioData?.portfolio?.totalValue > 500000 ? 'AA+' : 'A'}</span>
                                     </div>
                                     <div>
                                         <p className="text-[9px] font-black text-text-muted uppercase tracking-[0.3em] mb-2 opacity-60">Sharpe Delta</p>
@@ -294,6 +305,10 @@ export default function DashboardPage() {
                                 <InsightCard title="SYSTEMIC VOLATILITY" desc="Historical volatility in SME mid-caps detected. VaR limit approaching institutional buffer." type="CRITICAL" urgent />
                                 <InsightCard title="ALPHA IDENTIFIED" desc="Advisor Priya Singh's Debt Strategy has outperformed peers by 3.12% in the current cycle." type="OPPORTUNITY" />
                             </div>
+
+                            <div className="mt-8 h-[600px] lg:h-auto">
+                                <MarketDecisionFeed />
+                            </div>
                         </div>
                     </div>
 
@@ -311,9 +326,13 @@ export default function DashboardPage() {
                                     </div>
                                 </div>
                                 <div className="space-y-4">
-                                    <AdvisorRow name="Rajesh Kumar, CFA" specialty="Institutional Equity" trust={98} />
-                                    <AdvisorRow name="Priya Singh" specialty="Fixed Income Alpha" trust={95} />
-                                    <AdvisorRow name="Dr. Arvinder Singh" specialty="Regulatory Compliance" trust={100} />
+                                    {verifiedAdvisors.length > 0 ? (
+                                        verifiedAdvisors.map((adv: any) => (
+                                            <AdvisorRow key={adv.advisorId} name={adv.name} specialty={adv.strategyType || 'Quantitative Strategy'} trust={adv.compatibilityScore} />
+                                        ))
+                                    ) : (
+                                        <div className="text-text-muted text-xs italic opacity-60">No Fiduciaries currently active.</div>
+                                    )}
                                 </div>
                             </GlassCard>
                         </motion.div>
@@ -334,9 +353,13 @@ export default function DashboardPage() {
                                 <PremiumButton variant="secondary" className="scale-75 origin-right uppercase tracking-widest text-[9px]">View All</PremiumButton>
                             </div>
                             <div className="space-y-8">
-                                <TransactionItem symbol="RNEW" name="Sustainable Energy Fund" amount="₹2,50,000" date="Oct 24, 2025" status="COMPLETED" />
-                                <TransactionItem symbol="ALPH" name="Quant Alpha Strategy" amount="₹5,00,000" date="Oct 20, 2025" status="COMPLETED" />
-                                <TransactionItem symbol="GOLD" name="Sovereign Gold Bonds" amount="₹85,000" date="Oct 12, 2025" status="PROCESSING" />
+                                {portfolioData?.transactions?.length > 0 ? (
+                                    portfolioData.transactions.map((tx: any) => (
+                                        <TransactionItem key={tx.id} symbol={tx.assetSymbol} name={tx.assetSymbol + " Asset"} amount={`₹${(tx.quantity * tx.price).toLocaleString('en-IN')}`} date={new Date(tx.date).toLocaleDateString()} status={tx.type === 'BUY' ? 'COMPLETED' : 'PROCESSED'} />
+                                    ))
+                                ) : (
+                                    <div className="text-text-muted text-xs italic opacity-60">No recent transactions recorded.</div>
+                                )}
                             </div>
                         </GlassCard>
                     </motion.div>

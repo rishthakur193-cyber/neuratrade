@@ -34,43 +34,58 @@ export default function AdminDashboard() {
     const [metrics, setMetrics] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const token = localStorage.getItem('token');
-        if (!token) {
-            window.location.href = '/auth/login';
-            return;
-        }
-
-        async function fetchData() {
-            try {
-                const userRes = await fetch('/api/auth/me', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (userRes.ok) {
-                    const user = await userRes.json();
-                    if (user.role !== 'ADMIN') {
-                        window.location.href = '/dashboard';
-                        return;
-                    }
-                    setUserData(user);
+    const fetchData = async () => {
+        const userStr = localStorage.getItem('ecosystem_user');
+        if (!userStr) return;
+        const { token } = JSON.parse(userStr);
+        try {
+            const userRes = await fetch('/api/auth/me', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (userRes.ok) {
+                const user = await userRes.json();
+                if (user.role !== 'ADMIN') {
+                    window.location.href = '/dashboard';
+                    return;
                 }
-
-                const metricsRes = await fetch('/api/admin/metrics', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (metricsRes.ok) {
-                    const data = await metricsRes.json();
-                    setMetrics(data);
-                }
-            } catch (error) {
-                console.error("Admin Dashboard Fetch Error:", error);
-            } finally {
-                setLoading(false);
+                setUserData(user);
             }
-        }
 
+            const metricsRes = await fetch('/api/admin/metrics', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (metricsRes.ok) {
+                const data = await metricsRes.json();
+                setMetrics(data);
+            }
+        } catch (error) {
+            console.error("Admin Dashboard Fetch Error:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
         fetchData();
     }, []);
+
+    const handleApprove = async (advisorProfileId: string) => {
+        const userStr = localStorage.getItem('ecosystem_user');
+        if (!userStr) return;
+        const { token } = JSON.parse(userStr);
+        try {
+            const res = await fetch('/api/admin/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ advisorProfileId })
+            });
+            if (res.ok) {
+                fetchData();
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    };
 
     if (loading) {
         return (
@@ -178,10 +193,21 @@ export default function AdminDashboard() {
                             </div>
 
                             <div className="space-y-4">
-                                <VerificationRow name="Rahul Deshmukh" bio="Individual / RI" progress={75} time="2h ago" />
-                                <VerificationRow name="Capital Wealth Ltd" bio="Corporate Aggregate" progress={100} time="5h ago" />
-                                <VerificationRow name="Nandini Sharma" bio="Sub-broker / RA" progress={45} time="8h ago" />
-                                <VerificationRow name="Elite Quant Fund" bio="Institutional Strategy" progress={90} time="12h ago" />
+                                {metrics?.verificationQueue?.length > 0 ? (
+                                    metrics.verificationQueue.map((adv: any) => (
+                                        <VerificationRow
+                                            key={adv.id}
+                                            name={adv.name}
+                                            bio={adv.sebiRegNo}
+                                            progress={100}
+                                            onApprove={() => handleApprove(adv.id)}
+                                        />
+                                    ))
+                                ) : (
+                                    <div className="text-text-muted text-xs uppercase tracking-widest py-8 text-center italic opacity-50">
+                                        All entities verified. No pending items.
+                                    </div>
+                                )}
                             </div>
                         </GlassCard>
 
@@ -289,7 +315,7 @@ function SidebarItem({ icon: Icon, label, active = false, badge = null, color = 
     );
 }
 
-function VerificationRow({ name, bio, progress, time }: { name: string, bio: string, progress: number, time: string }) {
+function VerificationRow({ name, bio, progress, onApprove }: { name: string, bio: string, progress: number, onApprove?: () => void }) {
     return (
         <div className="p-5 rounded-2xl bg-white/5 border border-white/5 hover:border-white/10 transition-all flex items-center justify-between group cursor-pointer">
             <div className="flex items-center gap-4">
@@ -304,7 +330,7 @@ function VerificationRow({ name, bio, progress, time }: { name: string, bio: str
             <div className="flex items-center gap-8">
                 <div className="hidden sm:block">
                     <div className="flex justify-between mb-2">
-                        <span className="text-[8px] font-black text-text-muted uppercase">Onboarding</span>
+                        <span className="text-[8px] font-black text-text-muted uppercase">KyC</span>
                         <span className="text-[8px] font-black text-white">{progress}%</span>
                     </div>
                     <div className="w-32 h-1 bg-white/5 rounded-full overflow-hidden">
@@ -315,7 +341,7 @@ function VerificationRow({ name, bio, progress, time }: { name: string, bio: str
                     <button className="w-8 h-8 rounded-lg bg-danger/10 text-danger flex items-center justify-center hover:bg-danger hover:text-white transition-all">
                         <XCircle size={16} />
                     </button>
-                    <button className="w-8 h-8 rounded-lg bg-success/10 text-success flex items-center justify-center hover:bg-success hover:text-white transition-all">
+                    <button onClick={onApprove} className="w-8 h-8 rounded-lg bg-success/10 text-success flex items-center justify-center hover:bg-success hover:text-white transition-all">
                         <CheckCircle size={16} />
                     </button>
                 </div>

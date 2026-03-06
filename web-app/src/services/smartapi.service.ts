@@ -149,4 +149,63 @@ export class SmartApiService {
             endpoint: "wss://smartapisocket.angelone.in/v2"
         };
     }
+
+    /**
+     * Fetches completed trades from Angel One trade book.
+     * This is the VERIFIED source — data comes directly from broker, cannot be manipulated.
+     * Each row represents an actual executed trade.
+     */
+    static async getTradeBook(jwtToken: string): Promise<any[]> {
+        try {
+            const response = await fetch(`${this.BASE_URL}/rest/auth/angelbroking/order/v1/getTradeBook`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-UserType': 'USER',
+                    'X-SourceID': 'WEB',
+                    'X-ClientLocalIP': '127.0.0.1',
+                    'X-ClientPublicIP': '127.0.0.1',
+                    'X-MACAddress': '00-00-00-00-00-00',
+                    'X-PrivateKey': this.API_KEY || '',
+                    'Authorization': `Bearer ${jwtToken}`,
+                },
+            });
+            const data = await response.json();
+            if (!data.status) return [];
+            return data.data ?? [];
+        } catch (err) {
+            console.error('[SmartAPI] getTradeBook error:', err);
+            return [];
+        }
+    }
+
+    /**
+     * Fetches all orders (open + completed) from Angel One order book.
+     * Used for cross-referencing entry prices with stated recommendations.
+     */
+    static async getOrderBook(jwtToken: string): Promise<any[]> {
+        try {
+            const response = await fetch(`${this.BASE_URL}/rest/auth/angelbroking/order/v1/getOrderBook`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-UserType': 'USER',
+                    'X-SourceID': 'WEB',
+                    'X-ClientLocalIP': '127.0.0.1',
+                    'X-ClientPublicIP': '127.0.0.1',
+                    'X-MACAddress': '00-00-00-00-00-00',
+                    'X-PrivateKey': this.API_KEY || '',
+                    'Authorization': `Bearer ${jwtToken}`,
+                },
+            });
+            const data = await response.json();
+            if (!data.status) return [];
+            return data.data ?? [];
+        } catch (err) {
+            console.error('[SmartAPI] getOrderBook error:', err);
+            return [];
+        }
+    }
 }
