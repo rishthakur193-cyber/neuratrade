@@ -196,7 +196,7 @@ process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 setupWebSockets(server);
 
-server.listen(PORT, () => {
+server.listen(Number(PORT), '0.0.0.0', () => {
     logger.info({
         msg: `🚀 NeuraTrade API running in ${process.env.NODE_ENV || 'development'} mode`,
         port: PORT,
