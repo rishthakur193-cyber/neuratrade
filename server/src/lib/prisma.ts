@@ -11,13 +11,11 @@ const isProd = process.env.NODE_ENV === 'production';
 // Connection pooling and retry configuration for serverless environments
 // Cloud Run can scale rapidly; we must control connection overhead.
 const prisma = new PrismaClient({
-    datasources: {
+    datasources: process.env.DATABASE_URL ? {
         db: {
-            // In production, we ensure sslmode=require if not already in DATABASE_URL
-            // The user confirmed DATABASE_URL already includes it, but we can append safe defaults
             url: process.env.DATABASE_URL,
         },
-    },
+    } : undefined,
     log: isProd
         ? [
             { emit: 'event', level: 'error' },
