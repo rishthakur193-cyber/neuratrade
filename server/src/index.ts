@@ -23,6 +23,9 @@ import { errorHandler } from './middleware/errorHandler.js';
 import { globalRateLimiter } from './middleware/rateLimiter.js';
 import { BrokerService } from './services/BrokerService.js';
 import { verificationEngine } from './services/TradeVerificationEngine.js';
+import { discoverAdvisors } from './controllers/AdvisorIntelligenceController.js';
+import { getJourney } from './controllers/EcosystemController.js';
+import { FeedController } from './controllers/FeedController.js';
 
 dotenv.config();
 
@@ -96,6 +99,13 @@ app.get('/health', (req: Request, res: Response) => {
         timestamp: new Date().toISOString()
     });
 });
+
+/**
+ * Deployment Verification Aliases
+ */
+app.get('/advisor/list', discoverAdvisors as any);
+app.get('/investor/dashboard', getJourney as any);
+app.get('/signal/feed', FeedController.getDynamicFeed);
 
 /**
  * Readiness Probe

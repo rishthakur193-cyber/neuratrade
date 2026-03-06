@@ -1,0 +1,63 @@
+steps:
+  # Stage 1: Install dependencies
+  - name: 'node:20'
+    entrypoint: 'npm'
+    args: ['install', '--prefix', 'server']
+
+  # Stage 2: Build backend container
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'build', 
+      '-t', 'asia-south1-docker.pkg.dev/$PROJECT_ID/neuratrade-repo/neuratrade-api:$COMMIT_SHA',
+      '-t', 'asia-south1-docker.pkg.dev/$PROJECT_ID/neuratrade-repo/neuratrade-api:latest',
+      '-f', 'server/Dockerfile', 
+      'server'
+    ]
+  
+  # Stage 3: Push container to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'asia-south1-docker.pkg.dev/$PROJECT_ID/neuratrade-repo/neuratrade-api:$COMMIT_SHA']
+  
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'asia-south1-docker.pkg.dev/$PROJECT_ID/neuratrade-repo/neuratrade-api:latest']
+  
+  # Stage 4: Deploy container to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'neuratrade-api'
+      - '--image'
+      - 'asia-south1-docker.pkg.dev/$PROJECT_ID/neuratrade-repo/neuratrade-api:$COMMIT_SHA'
+      - '--region'
+      - 'asia-south1'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+      - '--memory'
+      - '512Mi'
+      - '--max-instances'
+      - '20'
+      - '--set-env-vars'
+      - 'DATABASE_URL=$_DATABASE_URL,JWT_SECRET=$_JWT_SECRET,NEXT_PUBLIC_API_URL=$_NEXT_PUBLIC_API_URL'
+
+  # Stage 5: Verification Task
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        URL=$(gcloud run services describe neuratrade-api --region asia-south1 --format='value(status.url)')
+        echo "Verifying deployment at $URL"
+        for path in "/health" "/advisor/list" "/investor/dashboard" "/signal/feed"; do
+          status=$(curl -s -o /dev/null -w "%{http_code}" "$URL$path")
+          if [ "$status" != "200" ] && [ "$status" != "401" ]; then
+            echo "FAILED: $path returned $status"
+            exit 1
+          fi
+          echo "PASSED: $path returned $status"
+        done
+
+images:
+  - 'asia-south1-docker.pkg.dev/$PROJECT_ID/neuratrade-repo/neuratrade-api:$COMMIT_SHA'
