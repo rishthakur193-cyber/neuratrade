@@ -1,50 +1,43 @@
 # NeuraTrade
 A production-ready, ultra-premium institutional mobile AI trading platform for Indian markets.
 
-## Prerequisites
-- Node.js (v20+)
-- PostgreSQL Database
-- Angel One SmartAPI Credentials
+## Public API
+The production API is live at:
+**https://neuratrade-api-nzi5eu3gha-el.a.run.app**
 
-## Environment Setup
-1. Copy `.env.example` to `.env` in the root of the application (e.g., inside `web-app`).
-2. Fill in the required credentials, notably `DATABASE_URL` and `NEXTAUTH_SECRET`.
+## Deployment Architecture
+- **Infrastructure**: Google Cloud Run (Serverless)
+- **Region**: `asia-south1`
+- **CI/CD**: Google Cloud Build (GitHub Trigger)
+- **Database**: Prisma with SQLite (Production hardening in progress)
+- **Containerization**: Multi-stage Docker build
 
-## Installation
-Navigate to your primary web application folder:
-```bash
-cd web-app
-npm install
-```
+## Development & Deployment
+Pushing to the `main` branch automatically triggers the Cloud Build pipeline, which:
+1. Builds the Docker container.
+2. Pushes the image to Artifact Registry.
+3. Deploys to Cloud Run with automatic health verification.
 
-## Database Initialization
-Once your PostgreSQL database is reachable at `DATABASE_URL`, sync the Prisma schema:
-```bash
-npx prisma generate
-npx prisma db push
-```
-*(Note: Use `npx prisma migrate deploy` if migrating a pre-existing production schema.)*
-
-## Production Build
-Build the Next.js application:
-```bash
-npm run build
-```
-
-## Running the Application
-To start the production server:
-```bash
-npm run start
-```
-
-## Container Deployment
-A multi-stage `Dockerfile` is included in `web-app/Dockerfile` optimized for Next.js standalone outputs. Use this to deploy to services like Google Cloud Run or AWS ECS.
-
-```bash
-docker build -t neuratrade .
-docker run -p 3000:3000 --env-file .env neuratrade
-```
+## Local Development
+1. Install dependencies:
+   ```bash
+   cd server
+   npm install
+   ```
+2. Set environment variables in `.env`.
+3. Generate Prisma client:
+   ```bash
+   npm run prisma:generate
+   ```
+4. Run development server:
+   ```bash
+   npm run dev
+   ```
 
 ## Health Checks
-Load balancers can actively ping the stateless health endpoint:
-`GET /api/health`
+- **Stateless Health**: `GET /health`
+- **Advisor List**: `GET /advisor/list`
+- **Investor Dashboard**: `GET /investor/dashboard`
+- **Signal Feed**: `GET /signal/feed`
+
+All endpoints return JSON responses.
