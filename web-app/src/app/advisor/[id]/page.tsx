@@ -29,6 +29,7 @@ import {
     Tooltip,
     ResponsiveContainer
 } from "recharts";
+import { PaymentCheckout } from "@/components/payments/PaymentCheckout";
 
 export default function AdvisorProfilePage() {
     const { id } = useParams();
@@ -219,9 +220,14 @@ export default function AdvisorProfilePage() {
                             </div>
 
                             <div className="mt-12 space-y-4">
-                                <PremiumButton variant="primary" className="w-full py-4 text-sm font-black shadow-neon-glow">
-                                    Initialize Mandate Discussion
-                                </PremiumButton>
+                                <PaymentCheckout
+                                    amount={4999}
+                                    advisorId={advisor.id}
+                                    advisorName={advisor.name}
+                                    onSuccess={() => {
+                                        window.location.reload();
+                                    }}
+                                />
                                 <button className="w-full py-4 text-[10px] font-black uppercase tracking-[0.2em] bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all">
                                     Download Fiduciary Disclosure
                                 </button>

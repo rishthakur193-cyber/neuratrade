@@ -1,56 +1,64 @@
-import { initDb } from '@/lib/db';
-import { randomUUID } from 'crypto';
-
 export class PaymentService {
+  private static API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+
   /**
-   * Generates a payment intent and returns checkout details suitable for UPI processing.
+   * Load Razorpay Checkout Script
+   */
+  static loadRazorpay(): Promise<boolean> {
+    return new Promise((resolve) => {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  }
+
+  static async initiatePayment(amount: number, planId?: string, advisorId?: string) {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${this.API_URL}/payments/initiate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ amount, planId, advisorId })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to initiate payment');
+    }
+
+    return await response.json();
+  }
+
+  /**
+   * Alias for initiatePayment for subscription intent
    */
   static async createSubscriptionIntent(userId: string, planName: string, amount: number) {
-    if (!userId) throw new Error("Missing user ID");
-
-    const orderId = `eco_order_${randomUUID()}`;
-
-    // In production, this initiates a Razorpay/Stripe session
-    // Since Indian Fintech focuses on UPI, we mock UPI specific intents
-    return {
-      orderId,
-      amount,
-      currency: 'INR',
-      planName,
-      status: 'created',
-      upiLink: `upi://pay?pa=ecosystem@bank&pn=Ecosystem%20Of%20Smart%20Investing&tr=${orderId}&am=${amount}&cu=INR`
-    };
+    return this.initiatePayment(amount, planName);
   }
 
   /**
-   * Validates webhook signature and activates the subscription.
+   * Verify payment signature
    */
-  static async handleWebhookVerification(orderId: string, userId: string, advisorId: string, plan: any) {
-    const db = await initDb();
+  static async verifyPayment(paymentDetails: any) {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${this.API_URL}/payments/verify`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(paymentDetails)
+    });
 
-    // In a real scenario, we'd verify the signature here.
-    // For MVP, we proceed to activate.
-    await this.activateSubscription(userId, advisorId, plan);
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Payment verification failed');
+    }
 
-    return { success: true, message: 'Subscription activated successfully' };
-  }
-
-  private static async activateSubscription(investorId: string, advisorId: string, plan: string) {
-    const db = await initDb();
-    const id = randomUUID();
-    const startDate = new Date();
-    const endDate = new Date();
-    endDate.setDate(startDate.getDate() + 30); // 30 day default
-
-    await db.run(`
-      INSERT INTO AdvisorSubscription (id, investorId, advisorId, plan, status, startDate, endDate, updatedAt)
-      VALUES (?, ?, ?, ?, 'ACTIVE', ?, ?, CURRENT_TIMESTAMP)
-      ON CONFLICT(investorId, advisorId) DO UPDATE SET
-        status = 'ACTIVE',
-        plan = EXCLUDED.plan,
-        startDate = EXCLUDED.startDate,
-        endDate = EXCLUDED.endDate,
-        updatedAt = CURRENT_TIMESTAMP
-    `, [id, investorId, advisorId, plan, startDate.toISOString(), endDate.toISOString()]);
+    return await response.json();
   }
 }

@@ -66,4 +66,46 @@ export class AdvisorService {
 
         return { success: true, message: 'Investor successfully mapped to your CRM', mappingId: client.id };
     }
+
+    static async getStrategies(advisorUserId: string) {
+        const profile = await prisma.advisorProfile.findUnique({
+            where: { userId: advisorUserId }
+        });
+        if (!profile) throw new Error("Advisor Profile not found");
+
+        const strategies = await prisma.strategy.findMany({
+            where: { advisorId: profile.id }
+        });
+        return { success: true, strategies };
+    }
+
+    static async getLeads(advisorUserId: string) {
+        // Simple logic for leads: Investors not yet assigned to this advisor
+        const profile = await prisma.advisorProfile.findUnique({ where: { userId: advisorUserId } });
+        if (!profile) throw new Error("Advisor Profile not found");
+
+        // Avoid investors already assigned
+        const assignedInvestorIds = (await prisma.advisorClient.findMany({
+            where: { advisorId: profile.id },
+            select: { investorId: true }
+        })).map(ac => ac.investorId);
+
+        const potentialLeads = await prisma.investorProfile.findMany({
+            where: {
+                userId: { notIn: assignedInvestorIds }
+            },
+            include: { user: { select: { name: true } } },
+            take: 5
+        });
+
+        return {
+            success: true,
+            leads: potentialLeads.map(l => ({
+                id: l.id,
+                name: l.user.name,
+                profile: l.riskTolerance + ' / ' + (l.investorType || 'Retail'),
+                match: 85 + Math.floor(Math.random() * 15) // Matching score can be algorithmic later
+            }))
+        };
+    }
 }

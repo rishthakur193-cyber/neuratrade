@@ -4,15 +4,17 @@ import { AuthService } from '@/services/auth.service';
 
 export async function GET(req: Request) {
     try {
-        const authHeader = req.headers.get('authorization');
-        if (!authHeader) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        const token = authHeader.split(' ')[1];
-        const user = await AuthService.me(token);
+        const userId = req.headers.get('x-user-id');
+        const userRole = req.headers.get('x-user-role');
 
-        if (user.role !== 'ADVISOR') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        if (!userId) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        if (userRole !== 'ADVISOR') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
         const db = await initDb();
-        const profile = await db.get('SELECT id FROM AdvisorProfile WHERE userId = ?', [user.id]);
+        const profile = await db.get('SELECT id FROM AdvisorProfile WHERE userId = ?', [userId]);
 
         let strategies = [];
         if (profile) {

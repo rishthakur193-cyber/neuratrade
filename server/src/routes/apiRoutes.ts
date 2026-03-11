@@ -14,8 +14,11 @@ import riskProfilingRoutes from './riskProfilingRoutes.js';
 import authRoutes from './authRoutes.js';
 import feedRoutes from './feedRoutes.js';
 import adminRoutes from './adminRoutes.js';
+import aiRoutes from './aiRoutes.js';
 import kycRoutes from './kycRoutes.js';
-import { authRateLimiter } from '../middleware/rateLimiter.js';
+import growthRoutes from './growthRoutes.js';
+import paymentRoutes from './paymentRoutes.js';
+import { authRateLimiter, transactionRateLimiter } from '../middleware/rateLimiter.js';
 
 const router = Router();
 
@@ -32,8 +35,11 @@ router.use('/subscriptions', subscriptionRoutes);
 router.use('/platform-subscriptions', platformSubscriptionRoutes);
 router.use('/risk-profiling', riskProfilingRoutes);
 router.use('/feed', feedRoutes);
-router.use('/signal', signalRoutes);
+router.use('/signal', transactionRateLimiter, signalRoutes);
 router.use('/admin', adminRoutes);
-router.use('/kyc', kycRoutes);
+router.use('/ai', aiRoutes);
+router.use('/kyc', transactionRateLimiter, kycRoutes);
+router.use('/growth', growthRoutes);
+router.use('/payments', transactionRateLimiter, paymentRoutes);
 
 export default router;

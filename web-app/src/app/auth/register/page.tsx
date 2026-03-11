@@ -17,30 +17,41 @@ import {
     ShieldCheck,
     Zap
 } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import {
     GlassCard,
     PremiumButton,
     NeonBadge,
     SectionHighlight
 } from "@/components/ui/PremiumUI";
+import { RegulatoryDisclaimer } from "@/components/compliance/RegulatoryDisclaimer";
 
 const steps = [
     { id: 1, title: "Nexus Identity", icon: User },
     { id: 2, title: "Federal KYC", icon: Fingerprint },
-    { id: 3, title: "Strategy Alignment", icon: TrendingUp },
-    { id: 4, title: "System Ready", icon: CheckCircle2 },
+    { id: 3, title: "Risk Protocol", icon: ShieldAlert },
+    { id: 4, title: "Strategy Alignment", icon: TrendingUp },
+    { id: 5, title: "System Ready", icon: CheckCircle2 },
 ];
+import { ShieldAlert } from "lucide-react";
 
-export default function RegisterPage() {
+import { Suspense } from "react";
+
+function RegisterPageInner() {
+    const searchParams = useSearchParams();
+    const refFromUrl = searchParams.get('ref') || "";
+
     const [currentStep, setCurrentStep] = useState(1);
     const [formData, setFormData] = useState({
         fullName: "",
         email: "",
         password: "",
+        referralCode: refFromUrl,
         aadhaar: "",
         pan: "",
         incomeRange: "₹10L - ₹25L",
         investmentExperience: "Intermediate (1-5 Years)",
+        riskAcknowledged: false,
     });
 
     const [error, setError] = useState("");
@@ -63,6 +74,9 @@ export default function RegisterPage() {
             if (formData.pan && formData.pan.length !== 10) { setError("PAN must be exactly 10 characters (e.g. ABCDE1234F)"); return false; }
             if (formData.aadhaar && !/^\d{12}$/.test(formData.aadhaar.replace(/\s/g, ""))) { setError("Aadhaar must be exactly 12 digits"); return false; }
         }
+        if (currentStep === 3) {
+            if (!formData.riskAcknowledged) { setError("You must acknowledge the regulatory risks to proceed."); return false; }
+        }
         return true;
     };
 
@@ -84,7 +98,8 @@ export default function RegisterPage() {
                     name: formData.fullName.trim(),
                     email: formData.email.trim().toLowerCase(),
                     password: formData.password,
-                    role: "INVESTOR"
+                    role: "INVESTOR",
+                    referralCode: formData.referralCode
                 }),
             });
 
@@ -231,6 +246,20 @@ export default function RegisterPage() {
                                             />
                                         </div>
                                     </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-text-muted pl-1">Referral Code (Optional)</label>
+                                        <div className="relative group">
+                                            <Zap className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted group-focus-within:text-[#69F0AE] transition-colors" size={18} />
+                                            <input
+                                                type="text"
+                                                name="referralCode"
+                                                value={formData.referralCode}
+                                                onChange={handleInputChange}
+                                                placeholder="NEURA-XXXX"
+                                                className="w-full bg-[#69F0AE]/5 border border-[#69F0AE]/10 rounded-2xl py-4 pl-12 pr-4 text-sm focus:border-[#69F0AE]/50 outline-none transition-all font-medium uppercase tracking-widest"
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         )}
@@ -278,6 +307,41 @@ export default function RegisterPage() {
                         {currentStep === 3 && (
                             <div className="space-y-8">
                                 <div className="text-center">
+                                    <NeonBadge text="SEBI REGULATORY FRAMEWORK" className="mx-auto mb-4" icon={ShieldAlert} />
+                                    <h2 className="text-4xl font-black tracking-tight text-white mb-2">Risk Mandate</h2>
+                                    <p className="text-text-secondary font-medium italic leading-relaxed">
+                                        Per SEBI regulations, all investors must acknowledge the risks associated with securities markets.
+                                    </p>
+                                </div>
+                                <div className="space-y-6">
+                                    <RegulatoryDisclaimer type="risk" />
+                                    <RegulatoryDisclaimer type="platform" />
+
+                                    <div
+                                        onClick={() => setFormData({ ...formData, riskAcknowledged: !formData.riskAcknowledged })}
+                                        className={`p-6 rounded-2xl border transition-all cursor-pointer flex items-center justify-between group ${formData.riskAcknowledged
+                                                ? "bg-[#69F0AE]/10 border-[#69F0AE]/30 shadow-[0_0_15px_rgba(105,240,174,0.1)]"
+                                                : "bg-white/5 border-white/10 hover:border-white/20"
+                                            }`}
+                                    >
+                                        <div className="flex flex-col gap-1">
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-white">I Accept the Disclaimer</span>
+                                            <span className="text-[9px] text-text-muted italic">I confirm I have read and understood the risks.</span>
+                                        </div>
+                                        <div className={`w-6 h-6 rounded-lg border flex items-center justify-center transition-all ${formData.riskAcknowledged
+                                                ? "bg-[#69F0AE] border-[#69F0AE] text-black"
+                                                : "border-white/20 group-hover:border-white/40"
+                                            }`}>
+                                            {formData.riskAcknowledged && <CheckCircle2 size={16} />}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {currentStep === 4 && (
+                            <div className="space-y-8">
+                                <div className="text-center">
                                     <NeonBadge text="MATCHING CORE" className="mx-auto mb-4" icon={Database} />
                                     <h2 className="text-4xl font-black tracking-tight text-white mb-2">Wealth Profile</h2>
                                     <p className="text-text-secondary font-medium">Aligning your mandate with specialized institutional advisors.</p>
@@ -315,7 +379,7 @@ export default function RegisterPage() {
                             </div>
                         )}
 
-                        {currentStep === 4 && (
+                        {currentStep === 5 && (
                             <div className="text-center space-y-8">
                                 <motion.div
                                     initial={{ scale: 0.5, opacity: 0 }}
@@ -352,10 +416,10 @@ export default function RegisterPage() {
                                     <ArrowLeft size={16} /> Previous Node
                                 </button>
                             )}
-                            {currentStep < 4 && (
+                            {currentStep < 5 && (
                                 <PremiumButton
                                     variant="primary"
-                                    onClick={currentStep === 3 ? handleRegister : nextStep}
+                                    onClick={currentStep === 4 ? handleRegister : nextStep}
                                     disabled={loading}
                                     className="flex-1 py-4 text-sm"
                                 >
@@ -370,7 +434,7 @@ export default function RegisterPage() {
                                     )}
                                 </PremiumButton>
                             )}
-                            {currentStep === 4 && (
+                            {currentStep === 5 && (
                                 <PremiumButton
                                     variant="primary"
                                     onClick={() => window.location.href = '/dashboard'}
@@ -388,5 +452,13 @@ export default function RegisterPage() {
                 <p className="text-[10px] font-bold text-text-muted uppercase tracking-[0.3em]">Institutional Grade Security Framework v8.1</p>
             </div>
         </div>
+    );
+}
+
+export default function RegisterPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-[#0B0B12] flex items-center justify-center text-white italic uppercase tracking-widest font-black opacity-40">Initializing Neural Link...</div>}>
+            <RegisterPageInner />
+        </Suspense>
     );
 }

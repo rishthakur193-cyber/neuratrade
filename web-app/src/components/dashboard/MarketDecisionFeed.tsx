@@ -47,7 +47,10 @@ export const MarketDecisionFeed = () => {
             ? process.env.NEXT_PUBLIC_API_URL.replace('http', 'ws').replace('/api', '')
             : 'ws://localhost:5000';
 
-        const socket = new WebSocket(wsHost);
+        const storedUser = localStorage.getItem('ecosystem_user');
+        const token = storedUser ? JSON.parse(storedUser).token : '';
+
+        const socket = new WebSocket(`${wsHost}?token=${token}`);
 
         socket.onmessage = (event) => {
             const data = JSON.parse(event.data);
@@ -127,8 +130,8 @@ export const MarketDecisionFeed = () => {
                             key={f}
                             onClick={() => setFilter(f as any)}
                             className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg border transition-all ${filter === f
-                                    ? 'bg-white/10 border-white/20 text-white'
-                                    : 'bg-transparent border-transparent text-text-muted hover:text-white hover:bg-white/5'
+                                ? 'bg-white/10 border-white/20 text-white'
+                                : 'bg-transparent border-transparent text-text-muted hover:text-white hover:bg-white/5'
                                 }`}
                         >
                             {f.replace('_', ' ')}

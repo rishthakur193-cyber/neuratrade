@@ -108,37 +108,73 @@ export async function middleware(req: NextRequest) {
         const { payload } = await jwtVerify(token, secretKey);
         const userRole = payload.role as string;
 
-        // ── RBAC ─────────────────────────────────────────────────────────────
-        if (pathname.startsWith('/api/admin') && userRole !== 'ADMIN') {
-            return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        // ── 4. RBAC (API & PAGES) ──────────────────────────────────────────
+
+        // Admin protection
+        if (pathname.startsWith('/admin') || pathname.startsWith('/api/admin')) {
+            if (userRole !== 'ADMIN') {
+                return pathname.startsWith('/api/')
+                    ? NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+                    : NextResponse.redirect(new URL('/auth/login', req.url));
+            }
         }
 
-        // Allow investors to access advisor discovery/list/performance
+        // Advisor protection (allowing public advisor APIs)
         const publicAdvisorApiSubpaths = [
             '/api/advisor/list',
             '/api/advisor/discovery',
-            '/api/advisor/verified-performance'
+            '/api/advisor/verified-performance',
+            '/api/advisor/leaderboard'
         ];
-
         const isPublicAdvisorApi = publicAdvisorApiSubpaths.some(p => pathname.startsWith(p));
 
-        if (pathname.startsWith('/api/advisor') && userRole !== 'ADVISOR' && !isPublicAdvisorApi) {
-            return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        if ((pathname.startsWith('/advisor') || pathname.startsWith('/api/advisor')) && !isPublicAdvisorApi) {
+            if (userRole !== 'ADVISOR') {
+                return pathname.startsWith('/api/')
+                    ? NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+                    : NextResponse.redirect(new URL('/auth/login', req.url));
+            }
         }
 
-        return NextResponse.next();
+        // Investor protection
+        if (pathname.startsWith('/investor') || pathname.startsWith('/api/investor')) {
+            if (userRole !== 'INVESTOR') {
+                return pathname.startsWith('/api/')
+                    ? NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+                    : NextResponse.redirect(new URL('/auth/login', req.url));
+            }
+        }
+
+        // Pass user context to downstream API handlers/pages via headers
+        const requestHeaders = new Headers(req.headers);
+        requestHeaders.set('x-user-id', payload.userId as string);
+        requestHeaders.set('x-user-role', userRole);
+
+        return NextResponse.next({
+            request: {
+                headers: requestHeaders,
+            },
+        });
 
     } catch {
-        return NextResponse.json(
-            { error: 'Token expired or invalid' },
-            { status: 401 }
-        );
+        if (pathname.startsWith('/api/')) {
+            return NextResponse.json(
+                { error: 'Token expired or invalid' },
+                { status: 401 }
+            );
+        }
+        return NextResponse.redirect(new URL('/auth/login', req.url));
     }
 }
 
 // ---------------------------------------------------------------------------
-// Matcher — API routes only. Static assets / pages never touch middleware.
+// Matcher — API routes and Dashboard pages.
 // ---------------------------------------------------------------------------
 export const config = {
-    matcher: ['/api/:path*'],
+    matcher: [
+        '/api/:path*',
+        '/admin/:path*',
+        '/advisor/:path*',
+        '/investor/:path*'
+    ],
 };

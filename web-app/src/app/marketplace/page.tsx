@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
     Users,
@@ -48,40 +48,43 @@ const successStories = [
     }
 ];
 
-const marketplaceServices = [
-    {
-        category: "Portfolio Management",
-        title: "Institutional Alpha Core",
-        advisor: "Vikram Malhotra",
-        price: "₹15k/year",
-        tags: ["Equity", "Quant"],
-        rating: 4.9,
-        clients: "450+",
-        verified: true
-    },
-    {
-        category: "Tax Optimization",
-        title: "HNI Tax Shield",
-        advisor: "Sarah Fernandes",
-        price: "₹25k/year",
-        tags: ["Tax", "Estate"],
-        rating: 4.8,
-        clients: "120+",
-        verified: true
-    },
-    {
-        category: "Alternative Assets",
-        title: "Private Equity Access",
-        advisor: "Dr. Arvinder Singh",
-        price: "₹50k/year",
-        tags: ["AIF", "Venture"],
-        rating: 4.9,
-        clients: "50+",
-        verified: true
-    }
-];
+const marketplaceServices = []; // Placeholder for type support
 
 export default function MarketplacePage() {
+    const [advisors, setAdvisors] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [filter, setFilter] = useState("ALL");
+
+    useEffect(() => {
+        async function fetchAdvisors() {
+            try {
+                const storedUser = localStorage.getItem('ecosystem_user');
+                const token = storedUser ? JSON.parse(storedUser).token : null;
+
+                const res = await fetch('/api/advisor-intelligence/discovery', {
+                    headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    setAdvisors(data);
+                }
+            } catch (error) {
+                console.error("Marketplace Fetch Error:", error);
+            } finally {
+                setLoading(false);
+            }
+        }
+        fetchAdvisors();
+    }, []);
+
+    const filteredAdvisors = advisors.filter(adv => {
+        const matchesSearch = adv.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            adv.strategyType.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesFilter = filter === "ALL" || adv.strategyType.toUpperCase() === filter;
+        return matchesSearch && matchesFilter;
+    });
+
     return (
         <div className="min-h-screen bg-[#0B0B12] text-white selection:bg-accent-secondary/30">
             {/* Header / Nav Placeholder */}
@@ -90,15 +93,15 @@ export default function MarketplacePage() {
                     <div className="w-8 h-8 rounded-lg bg-premium-gradient flex items-center justify-center shadow-neon-glow">
                         <TrendingUp size={18} />
                     </div>
-                    <span className="font-black tracking-tighter text-xl">ECOSYSTEM</span>
+                    <span className="font-black tracking-tighter text-xl cursor-pointer" onClick={() => window.location.href = '/'}>NEURATRADE</span>
                 </div>
                 <div className="flex gap-8 items-center">
                     <nav className="hidden md:flex gap-6 text-[10px] font-black uppercase tracking-widest text-text-muted">
                         <a href="/dashboard" className="hover:text-white transition-colors">Dashboard</a>
                         <a href="/marketplace" className="text-white border-b border-accent-secondary pb-1">Marketplace</a>
-                        <a href="/messages" className="hover:text-white transition-colors">Network</a>
+                        <a href="/leaderboard" className="hover:text-white transition-colors">Leaderboard</a>
                     </nav>
-                    <PremiumButton variant="secondary" className="scale-75 origin-right">Launch App</PremiumButton>
+                    <PremiumButton variant="secondary" className="scale-75 origin-right" onClick={() => window.location.href = '/dashboard'}>Launch Terminal</PremiumButton>
                 </div>
             </header>
 
@@ -137,6 +140,8 @@ export default function MarketplacePage() {
                                 <input
                                     type="text"
                                     placeholder="Search by strategy, advisor name, or specific asset class..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
                                     className="w-full bg-transparent py-6 pr-8 text-lg outline-none font-medium placeholder:text-text-muted/50"
                                 />
                                 <div className="pr-4">
@@ -224,68 +229,81 @@ export default function MarketplacePage() {
                         <div className="flex items-center gap-6">
                             <div className="flex rounded-full bg-white/5 border border-white/10 p-1">
                                 {['ALL', 'EQUITY', 'QUANT', 'ALT'].map(f => (
-                                    <button key={f} className={`px-5 py-1.5 rounded-full text-[10px] font-black tracking-widest transition-all ${f === 'ALL' ? 'bg-accent-secondary text-white' : 'text-text-muted hover:text-white'}`}>
+                                    <button
+                                        key={f}
+                                        onClick={() => setFilter(f)}
+                                        className={`px-5 py-1.5 rounded-full text-[10px] font-black tracking-widest transition-all ${filter === f ? 'bg-accent-secondary text-white' : 'text-text-muted hover:text-white'}`}>
                                         {f}
                                     </button>
                                 ))}
                             </div>
-                            <button className="flex items-center gap-2 px-6 py-2.5 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black tracking-widest hover:bg-white/10 transition-all uppercase">
-                                <Filter size={14} /> Global Filters
-                            </button>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-                        {marketplaceServices.map((service, i) => (
-                            <GlassCard key={i} className="p-8 group flex flex-col min-h-[500px] border-white/5 hover:border-accent-cyan/30 transition-all duration-500" neon>
-                                <div className="flex justify-between items-start mb-8">
-                                    <div className="w-12 h-12 rounded-2xl bg-accent-cyan/10 border border-accent-cyan/20 flex items-center justify-center text-accent-cyan shadow-[0_0_15px_rgba(0,229,255,0.2)]">
-                                        <Award size={24} />
-                                    </div>
-                                    <div className="flex items-center gap-1.5 text-xs font-black text-warning">
-                                        <Star size={14} fill="currentColor" />
-                                        {service.rating}
-                                    </div>
-                                </div>
-
-                                <div className="space-y-2 mb-6">
-                                    <span className="text-[10px] font-black text-accent-cyan uppercase tracking-[0.2em]">{service.category}</span>
-                                    <h3 className="text-2xl font-black tracking-tight leading-tight group-hover:text-accent-cyan transition-colors">{service.title}</h3>
-                                    <p className="text-xs text-text-muted font-bold">Mandate Lead: <span className="text-white underline decoration-accent-cyan/30 underline-offset-4">{service.advisor}</span></p>
-                                </div>
-
-                                <div className="flex flex-wrap gap-2 mb-8">
-                                    {service.tags.map(tag => (
-                                        <span key={tag} className="px-3 py-1 rounded-lg bg-white/5 border border-white/10 text-[9px] font-black uppercase tracking-widest text-text-muted group-hover:text-white transition-colors">
-                                            {tag}
-                                        </span>
-                                    ))}
-                                </div>
-
-                                <div className="mt-auto space-y-6">
-                                    <div className="p-5 rounded-2xl bg-black/40 border border-white/5 group-hover:border-accent-cyan/20 transition-colors flex justify-between items-center relative overflow-hidden">
-                                        <div className="relative z-10">
-                                            <p className="text-[9px] text-text-muted font-black uppercase tracking-[0.2em] mb-1">Fee Mandate</p>
-                                            <p className="text-xl font-black text-white">{service.price}</p>
+                    {loading ? (
+                        <div className="text-center py-24 text-accent-secondary animate-pulse uppercase tracking-[0.4em] font-black">
+                            Synchronizing Verified Fiduciaries...
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                            {filteredAdvisors.map((adv, i) => (
+                                <GlassCard key={adv.advisorId} className="p-8 group flex flex-col min-h-[500px] border-white/5 hover:border-accent-cyan/30 transition-all duration-500" neon>
+                                    <div className="flex justify-between items-start mb-8">
+                                        <div className="w-12 h-12 rounded-2xl bg-accent-cyan/10 border border-accent-cyan/20 flex items-center justify-center text-accent-cyan shadow-[0_0_15px_rgba(0,229,255,0.2)]">
+                                            <Award size={24} />
                                         </div>
-                                        <div className="text-right relative z-10">
-                                            <p className="text-[9px] text-text-muted font-black uppercase tracking-[0.2em] mb-1">AUM Managed</p>
-                                            <p className="text-sm font-black text-accent-cyan tracking-tight">{service.clients} Families</p>
+                                        <div className="flex flex-col items-end">
+                                            <div className="flex items-center gap-1.5 text-xs font-black text-warning">
+                                                <Star size={14} fill="currentColor" />
+                                                {(adv.trustScore / 20).toFixed(1)}
+                                            </div>
+                                            <span className="text-[8px] font-black text-text-muted uppercase tracking-widest mt-1">Trust Score: {adv.trustScore}</span>
                                         </div>
-                                        <div className="absolute top-0 right-0 w-24 h-24 bg-accent-cyan/5 blur-3xl pointer-events-none" />
                                     </div>
 
-                                    <PremiumButton
-                                        variant="primary"
-                                        className="w-full shadow-neon-glow !shadow-accent-cyan/20 hover:!shadow-accent-cyan/40"
-                                        onClick={() => window.location.href = `/advisor/${i + 1}`}
-                                    >
-                                        View Mandate & Profile
-                                    </PremiumButton>
-                                </div>
-                            </GlassCard>
-                        ))}
-                    </div>
+                                    <div className="space-y-2 mb-6">
+                                        <span className="text-[10px] font-black text-accent-cyan uppercase tracking-[0.2em]">{adv.strategyType}</span>
+                                        <h3 className="text-2xl font-black tracking-tight leading-tight group-hover:text-accent-cyan transition-colors italic">{adv.name}</h3>
+                                        <p className="text-[10px] text-text-muted font-bold uppercase tracking-widest">SEBI: <span className="text-white">{adv.sebiRegNo || 'INA00001234'}</span></p>
+                                    </div>
+
+                                    <div className="flex flex-wrap gap-2 mb-8">
+                                        {adv.matchReasons?.map((reason: string) => (
+                                            <span key={reason} className="px-3 py-1 rounded-lg bg-success/5 border border-success/10 text-[8px] font-black uppercase tracking-widest text-success">
+                                                {reason}
+                                            </span>
+                                        )) || (
+                                                <span className="px-3 py-1 rounded-lg bg-white/5 border border-white/10 text-[9px] font-black uppercase tracking-widest text-text-muted group-hover:text-white transition-colors">
+                                                    Institutional Grade
+                                                </span>
+                                            )}
+                                    </div>
+
+                                    <div className="mt-auto space-y-6">
+                                        <div className="p-5 rounded-2xl bg-black/40 border border-white/5 group-hover:border-accent-cyan/20 transition-colors flex justify-between items-center relative overflow-hidden">
+                                            <div className="relative z-10">
+                                                <p className="text-[9px] text-text-muted font-black uppercase tracking-[0.2em] mb-1">Compatibility</p>
+                                                <p className="text-xl font-black text-white">{adv.compatibilityScore}%</p>
+                                            </div>
+                                            <div className="text-right relative z-10">
+                                                <p className="text-[9px] text-text-muted font-black uppercase tracking-[0.2em] mb-1">Avg Ret/M</p>
+                                                <p className="text-sm font-black text-success tracking-tight">+{adv.avgMonthlyReturn}%</p>
+                                            </div>
+                                            <div className="absolute top-0 right-0 w-24 h-24 bg-accent-cyan/5 blur-3xl pointer-events-none" />
+                                        </div>
+
+                                        <PremiumButton
+                                            variant="primary"
+                                            className="w-full shadow-neon-glow !shadow-accent-cyan/20 hover:!shadow-accent-cyan/40"
+                                            onClick={() => window.location.href = `/advisors/${adv.advisorId}`}
+                                        >
+                                            View Mandate & Profile
+                                        </PremiumButton>
+                                    </div>
+                                </GlassCard>
+                            ))}
+                        </div>
+                    )}
 
                     <div className="mt-24 text-center">
                         <div className="inline-flex flex-col items-center gap-6 max-w-2xl mx-auto px-10 py-12 rounded-[40px] bg-white/5 border border-white/10 backdrop-blur-3xl relative overflow-hidden group">

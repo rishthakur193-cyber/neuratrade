@@ -4,16 +4,11 @@ import { AuthService } from '@/services/auth.service';
 
 export async function POST(req: Request) {
     try {
-        const authHeader = req.headers.get('authorization');
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return NextResponse.json({ error: 'Unauthorized middleware barrier' }, { status: 401 });
-        }
+        const userId = req.headers.get('x-user-id');
+        const userRole = req.headers.get('x-user-role');
 
-        const token = authHeader.split(' ')[1];
-        const user = await AuthService.me(token);
-
-        if (!user) {
-            return NextResponse.json({ error: 'Session Invalid' }, { status: 401 });
+        if (!userId) {
+            return NextResponse.json({ error: 'Session Invalid or Missing' }, { status: 401 });
         }
 
         const body = await req.json();
@@ -23,7 +18,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Missing plan details' }, { status: 400 });
         }
 
-        const intent = await PaymentService.createSubscriptionIntent(user.id, planName, amount);
+        const intent = await PaymentService.createSubscriptionIntent(userId, planName, amount);
 
         return NextResponse.json(intent, { status: 200 });
 

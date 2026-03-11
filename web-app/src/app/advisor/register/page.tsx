@@ -19,6 +19,8 @@ import {
     Target,
     Search
 } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import {
     GlassCard,
     PremiumButton,
@@ -34,6 +36,17 @@ const steps = [
 ];
 
 export default function AdvisorRegisterPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-[#0B0B12] flex items-center justify-center text-white italic opacity-50 uppercase tracking-[0.5em] text-[10px]">Initializing Nexus Handshake...</div>}>
+            <AdvisorRegisterForm />
+        </Suspense>
+    );
+}
+
+function AdvisorRegisterForm() {
+    const searchParams = useSearchParams();
+    const refFromUrl = searchParams.get('ref') || "";
+
     const [currentStep, setCurrentStep] = useState(1);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -41,6 +54,7 @@ export default function AdvisorRegisterPage() {
         name: "",
         email: "",
         password: "DefaultPass@123", // Simplified for onboarding UX
+        referralCode: refFromUrl,
         phone: "",
         sebiRegNo: "",
         yearsOfExperience: "",
@@ -185,6 +199,20 @@ export default function AdvisorRegisterPage() {
                                                 onChange={handleChange}
                                                 placeholder="+91 90000 00000"
                                                 className="w-full bg-black/40 border border-white/5 rounded-[24px] py-5 pl-16 pr-6 text-white text-sm font-black tracking-widest focus:border-accent-secondary transition-all outline-none uppercase"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-4">
+                                        <label className="text-[10px] font-black uppercase tracking-[0.3em] text-text-muted">Referral Invitation (Optional)</label>
+                                        <div className="relative group">
+                                            <Zap className="absolute left-6 top-1/2 -translate-y-1/2 text-text-muted group-focus-within:text-[#69F0AE] transition-colors" size={20} />
+                                            <input
+                                                type="text"
+                                                name="referralCode"
+                                                value={formData.referralCode}
+                                                onChange={handleChange}
+                                                placeholder="NEURA-XXXX"
+                                                className="w-full bg-[#69F0AE]/5 border border-[#69F0AE]/10 rounded-[24px] py-5 pl-16 pr-6 text-white text-sm font-black tracking-widest focus:border-[#69F0AE] transition-all outline-none uppercase"
                                             />
                                         </div>
                                     </div>

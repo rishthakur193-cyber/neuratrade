@@ -6,7 +6,12 @@ export function useMarketData(symbols: string[]) {
     const ws = useRef<WebSocket | null>(null);
 
     useEffect(() => {
-        const socket = new WebSocket('ws://localhost:5000');
+        const apiHost = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+        const wsHost = apiHost.replace('http', 'ws').replace('/api', '');
+        const storedUser = localStorage.getItem('ecosystem_user');
+        const token = storedUser ? JSON.parse(storedUser).token : '';
+
+        const socket = new WebSocket(`${wsHost}?token=${token}`);
         ws.current = socket;
 
         socket.onopen = () => {

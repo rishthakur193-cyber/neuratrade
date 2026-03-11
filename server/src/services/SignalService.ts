@@ -86,23 +86,47 @@ export class SignalService {
         // Invalidate cache
         this.activeSignalsCache = null;
 
-        // Automated Broker Execution for Direct Signals
-        if (data.isDirectSignal) {
-            try {
-                const brokerLink = await prisma.advisorBrokerLink.findUnique({
-                    where: { advisorId }
-                });
+        // Reward Advisor & Log Activity
+        try {
+            const { GrowthService } = await import('./GrowthService.js');
+            await GrowthService.addPoints(advisorId, 30, 'publishing a new strategy signal');
+            await GrowthService.logActivity(advisorId, 'PUBLISHED', `Advisor published a new signal for ${data.symbol}`);
+        } catch (err) {
+            console.error('Failed to update growth rewards for signal publish:', err);
+        }
 
-                if (brokerLink && brokerLink.isActive) {
-                    const { BrokerService } = await import('./BrokerService.js');
-                    const executionResult = await BrokerService.executeSignal(brokerLink.brokerName, signal);
-                    console.log(`[SignalService] Broker execution triggered for ${signal.symbol} via ${brokerLink.brokerName}:`, executionResult);
-                } else {
-                    console.log(`[SignalService] No active broker link for advisor ${advisorId}. Skipping automated execution.`);
-                }
-            } catch (err) {
-                console.error(`[SignalService] Broker execution failed for ${signal.symbol}:`, err);
+        // Automated Broker Execution for Direct Signals
+        try {
+            const brokerLink = await prisma.advisorBrokerLink.findUnique({
+                where: { advisorId }
+            });
+
+            if (brokerLink && brokerLink.isActive) {
+                const { BrokerService } = await import('./BrokerService.js');
+                const executionResult = await BrokerService.executeSignal(brokerLink.brokerName, signal);
+                console.log(`[SignalService] Broker execution triggered for ${signal.symbol} via ${brokerLink.brokerName}:`, executionResult);
+            } else {
+                console.log(`[SignalService] No active broker link for advisor ${advisorId}. Skipping automated execution.`);
             }
+        } catch (err) {
+            console.error(`[SignalService] Broker execution failed for ${signal.symbol}:`, err);
+        }
+
+        // SEBI Compliance Log
+        try {
+            const { AuditService } = await import('./AuditService.js');
+            await AuditService.log(
+                advisorId,
+                'COMPLIANCE_SIGNAL_PUBLISH',
+                {
+                    signalId: signal.id,
+                    symbol: data.symbol,
+                    type: data.isDirectSignal ? 'DIRECT' : 'ADVISORY',
+                    regulatory_tag: 'SEBI_TRANSPARENCY'
+                }
+            );
+        } catch (err) {
+            console.error('Failed to write compliance log for signal publish:', err);
         }
 
         return signal;
@@ -182,7 +206,6 @@ export class SignalService {
         // Invalidate cache
         this.activeSignalsCache = null;
 
-        const broadcast = getBroadcastToAll();
         if (broadcast) {
             broadcast({
                 type: 'SIGNAL_CLOSED',
@@ -190,6 +213,23 @@ export class SignalService {
                 result,
                 returnPct
             });
+        }
+
+        // SEBI Compliance Log
+        try {
+            const { AuditService } = await import('./AuditService.js');
+            await AuditService.log(
+                signal.advisorId,
+                'COMPLIANCE_PERFORMANCE_UPDATE',
+                {
+                    signalId,
+                    result,
+                    returnPct,
+                    regulatory_tag: 'SEBI_AUDIT_TRAIL'
+                }
+            );
+        } catch (err) {
+            console.error('Failed to write compliance log for signal closure:', err);
         }
 
         return updatedSignal;

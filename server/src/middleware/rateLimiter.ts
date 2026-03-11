@@ -25,3 +25,16 @@ export const authRateLimiter = rateLimit({
         code: 'AUTH_RATE_LIMIT_EXCEEDED',
     },
 });
+
+// Sensitive transaction rate limiter (Payments, Signals, KYC)
+export const transactionRateLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: process.env.NODE_ENV === 'production' ? 20 : 1000,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: {
+        status: 'error',
+        message: 'Too many sensitive operations. Protection active.',
+        code: 'TRANSACTION_RATE_LIMIT_EXCEEDED',
+    },
+});

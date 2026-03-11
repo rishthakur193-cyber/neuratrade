@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  url      = "file:./dev.db"
+  url      = env("DATABASE_URL")
 }
 
 // Enum defining the platform roles
@@ -55,8 +55,14 @@ model User {
   advisorProfile    AdvisorProfile?
   traineeProfile    TraineeProfile?
 
+  referralCode      String    @unique @default(uuid())
+  
   // Relations
   portfolios        Portfolio[]
+  referralsMade     Referral[]  @relation("Referrer")
+  referralRecord    Referral?   @relation("Referred")
+  rewards           UserRewards?
+  activities        SocialActivity[]
   messagesSent      Message[]   @relation("Sender")
   messagesRcvd      Message[]   @relation("Receiver")
   auditLogs         AuditLog[]
@@ -125,6 +131,7 @@ model AdvisorProfile {
   aum               Float?        // in INR Cr (server legacy)
   threeYearReturns  Float?
   verifiedAt        DateTime?
+  documentsUrl      String?
   
   strategies      Strategy[]
   subscribers     AdvisorSubscription[]
@@ -535,4 +542,56 @@ model Investment {
   status      String
   startDate   DateTime @default(now())
   endDate     DateTime?
+}
+
+model UserRewards {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  points          Int      @default(0)
+  level           Int      @default(1)
+  badges          String   @default("[]") // JSON stringified array of badge keys
+  
+  lastUpdated     DateTime @default(now())
+}
+
+model SocialActivity {
+  id              String   @id @default(uuid())
+  type            String   // JOINED, SUBSCRIBED, PUBLISHED, RANK_UP, REWARD_EARNED
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  content         String   // Pre-formatted message
+  metadata        String?  // JSON additional data
+  
+  createdAt       DateTime @default(now())
+}
+
+model Referral {
+  id              String   @id @default(uuid())
+  referrerId      String
+  referrer        User     @relation("Referrer", fields: [referrerId], references: [id])
+  referredUserId  String   @unique
+  referredUser    User     @relation("Referred", fields: [referredUserId], references: [id])
+  rewardPoints    Int      @default(0)
+  status          String   @default("PENDING") // PENDING, SUCCESSFUL
+  createdAt       DateTime @default(now())
+}
+
+model Payment {
+  id              String   @id @default(uuid())
+  orderId         String   @unique // Razorpay Order ID
+  paymentId       String?  @unique // Razorpay Payment ID
+  signature       String?
+  amount          Float
+  currency        String   @default("INR")
+  status          String   @default("CREATED") // CREATED, CAPTURED, FAILED
+  
+  userId          String
+  planId          String?
+  advisorId       String?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }

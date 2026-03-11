@@ -30,6 +30,9 @@ import {
 import EcosystemMap from "../../components/EcosystemMap";
 import { useMarketData } from "@/hooks/useMarketData";
 import { MarketDecisionFeed } from "@/components/dashboard/MarketDecisionFeed";
+import { ReferralDashboard } from "@/components/dashboard/ReferralDashboard";
+import { SocialActivityFeed } from "@/components/dashboard/SocialActivityFeed";
+import { OnboardingFunnel } from "@/components/dashboard/OnboardingFunnel";
 
 export default function DashboardPage() {
     const [userData, setUserData] = useState<any>(null);
@@ -58,7 +61,7 @@ export default function DashboardPage() {
                     setUserData(user);
                 }
 
-                const portRes = await fetch('/api/portfolio', {
+                const portRes = await fetch('/api/portfolio/overview', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (portRes.ok) {
@@ -134,10 +137,10 @@ export default function DashboardPage() {
                 <nav className="flex-1 space-y-4">
                     <div className="text-[10px] font-black text-text-muted uppercase tracking-[0.3em] mb-4 opacity-40 px-6">Main Matrix</div>
                     <SidebarItem icon={LayoutDashboard} label="Mission Control" active />
-                    <SidebarItem icon={Wallet} label="Global Portfolio" />
-                    <SidebarItem icon={MapIcon} label="Ecosystem Map" />
-                    <SidebarItem icon={Users} label="Verified Advisors" />
-                    <SidebarItem icon={Target} label="Goal Tracking" />
+                    <SidebarItem icon={Wallet} label="Global Portfolio" onClick={() => window.location.href = '/investor/portfolio'} />
+                    <SidebarItem icon={MapIcon} label="Ecosystem Map" onClick={() => window.location.href = '/ecosystem'} />
+                    <SidebarItem icon={Users} label="Verified Advisors" onClick={() => window.location.href = '/marketplace'} />
+                    <SidebarItem icon={Target} label="Goal Tracking" onClick={() => window.location.href = '/investor/goals'} />
                 </nav>
 
                 <div className="space-y-4 pt-10 border-t border-white/5">
@@ -248,13 +251,7 @@ export default function DashboardPage() {
                         </div>
 
                         <motion.div variants={itemVariants}>
-                            <GlassCard className="p-10 flex flex-col items-center justify-center text-center group cursor-pointer border-dashed hover:border-accent-secondary/50 bg-white/[0.02] min-h-full">
-                                <div className="w-20 h-20 rounded-[32px] bg-accent-secondary/5 border border-accent-secondary/20 flex items-center justify-center text-accent-secondary mb-6 group-hover:scale-110 group-hover:rotate-90 transition-all duration-500 shadow-neon-glow">
-                                    <Plus size={40} />
-                                </div>
-                                <h4 className="font-black text-xl uppercase tracking-widest mb-2 italic">Inject Capital</h4>
-                                <p className="text-[10px] text-text-muted font-black uppercase tracking-widest opacity-60 leading-relaxed px-4">Initialize new institutional vector</p>
-                            </GlassCard>
+                            <ReferralDashboard />
                         </motion.div>
                     </div>
 
@@ -294,6 +291,8 @@ export default function DashboardPage() {
                         </motion.div>
 
                         <div className="space-y-8">
+                            <OnboardingFunnel userType={userData?.role || 'INVESTOR'} />
+
                             <h3 className="text-xl font-black tracking-tighter flex items-center gap-4 uppercase italic">
                                 <div className="w-8 h-8 rounded-lg bg-accent-primary/20 flex items-center justify-center text-accent-primary">
                                     <Zap size={18} className="animate-pulse" />
@@ -304,6 +303,10 @@ export default function DashboardPage() {
                                 <InsightCard title="STRATEGIC REBALANCING" desc="Your allocation in Renewable Energy is 12.4% above benchmark. Recommend liquidation for Alpha." type="INTELLIGENCE" />
                                 <InsightCard title="SYSTEMIC VOLATILITY" desc="Historical volatility in SME mid-caps detected. VaR limit approaching institutional buffer." type="CRITICAL" urgent />
                                 <InsightCard title="ALPHA IDENTIFIED" desc="Advisor Priya Singh's Debt Strategy has outperformed peers by 3.12% in the current cycle." type="OPPORTUNITY" />
+                            </div>
+
+                            <div className="mt-8">
+                                <SocialActivityFeed />
                             </div>
 
                             <div className="mt-8 h-[600px] lg:h-auto">
@@ -516,7 +519,10 @@ function TwoFactorModal({ isOpen, onClose, onComplete }: { isOpen: boolean, onCl
     const startSetup = async () => {
         setLoading(true);
         try {
-            const res = await fetch('/api/auth/2fa/setup', { method: 'POST' });
+            const res = await fetch('/api/auth/setup-2fa', {
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            });
             const data = await res.json();
             setQrCode(data.qrCode);
             setStep(2);
@@ -530,9 +536,12 @@ function TwoFactorModal({ isOpen, onClose, onComplete }: { isOpen: boolean, onCl
     const verifySetup = async () => {
         setLoading(true);
         try {
-            const res = await fetch('/api/auth/2fa/verify', {
+            const res = await fetch('/api/auth/verify-2fa', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
                 body: JSON.stringify({ code })
             });
             if (res.ok) {
@@ -643,9 +652,13 @@ function OrderExecutionPanel({ symbols }: { symbols: string[] }) {
         setLoading(true);
         setStatus("");
         try {
-            const res = await fetch('/api/portfolio/trade', {
+            const token = localStorage.getItem('token');
+            const res = await fetch('/api/portfolio/mock-trade', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
                 body: JSON.stringify({ symbol: selected, type, quantity: qty })
             });
             const data = await res.json();

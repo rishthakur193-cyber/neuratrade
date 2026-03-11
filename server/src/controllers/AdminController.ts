@@ -53,3 +53,34 @@ export const verifyAdvisor = async (req: AuthRequest, res: Response) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+export const getFraudAlerts = async (req: AuthRequest, res: Response) => {
+    try {
+        const alerts = await prisma.scamFlag.findMany({
+            include: { advisor: { include: { user: { select: { name: true } } } } }
+        });
+        res.status(200).json(alerts);
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+export const getEntities = async (req: AuthRequest, res: Response) => {
+    try {
+        const advisors = await prisma.advisorProfile.findMany({ include: { user: true } });
+        const investors = await prisma.investorProfile.findMany({ include: { user: true } });
+        res.status(200).json({ advisors, investors });
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+export const getRevenueMetrics = async (req: AuthRequest, res: Response) => {
+    try {
+        const subscriptions = await prisma.platformSubscription.findMany();
+        const totalRevenue = subscriptions.reduce((acc, sub) => acc + (sub.tier === 'Premium' ? 999 : 0), 0);
+        res.status(200).json({ totalRevenue, subscriptionCount: subscriptions.length });
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+};

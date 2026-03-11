@@ -1,0 +1,30 @@
+﻿--- SEEDING TEST ACCOUNTS ---
+node.exe : (node:19248) 
+[DEP0180] 
+DeprecationWarning: 
+fs.Stats constructor is 
+deprecated.
+At line:1 char:1
++ & "C:\Program 
+Files\nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~
+    + CategoryInfo         
+     : NotSpecified: ((no  
+  de:19248) [D... is dep   
+ recated.:String) [], R    
+emoteException
+    + FullyQualifiedErrorI 
+   d : NativeCommandError
+ 
+(Use `node 
+--trace-deprecation ...` 
+to show where the warning 
+was created)
+Creating admin@neuratrade.com...
+Creating advisor@neuratrade.com...
+Creating investor@neuratrade.com...
+Γ£à Seeding complete.

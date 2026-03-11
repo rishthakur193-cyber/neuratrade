@@ -28,3 +28,27 @@ export const acceptLead = async (req: AuthRequest, res: Response) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+export const getStrategies = async (req: AuthRequest, res: Response) => {
+    try {
+        const userId = req.user?.userId;
+        if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+
+        const result = await AdvisorService.getStrategies(userId);
+        res.status(200).json(result);
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+export const getLeads = async (req: AuthRequest, res: Response) => {
+    try {
+        const userId = req.user?.userId;
+        if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+
+        const result = await AdvisorService.getLeads(userId);
+        res.status(200).json(result);
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+};

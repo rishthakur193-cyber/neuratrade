@@ -1,0 +1,44 @@
+﻿node.exe : Loaded 
+Prisma config from 
+prisma.config.ts.
+At line:1 char:1
++ & "C:\Program 
+Files\nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo 
+...
++ ~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~
+    + CategoryInfo     
+         : NotSpecifi  
+  ed: (Loaded Prisma   
+  c...isma.config.t    
+s.:String) [], Rem    
+oteException
+    + FullyQualifiedEr 
+   rorId : NativeComm  
+  andError
+ 
+
+Prisma config 
+detected, skipping 
+environment variable 
+loading.
+Prisma schema loaded from prisma\schema.prisma
+Datasource "db": SQLite database "dev.db" at "file:./prisma/dev.db"
+
+SQLite database dev.db created at file:./prisma/dev.db
+
+The SQLite database "dev.db" at "file:./prisma/dev.db" was successfully reset.
+
+Your database is now in sync with your Prisma schema. Done in 1.12s
+
+Running generate... (Use --skip-generate to skip the generators)
+[2K[1A[2K[GRunning generate... - Prisma Client
+[2K[1A[2K[GEPERM: operation not permitted, rename 'C:\Users\risha\ecosystem of smart invest
+ing\server\node_modules\.prisma\client\query_engine-windows.dll.node.tmp10848' -
+> 'C:\Users\risha\ecosystem of smart investing\server\node_modules\.prisma\clien
+t\query_engine-windows.dll.node'
+

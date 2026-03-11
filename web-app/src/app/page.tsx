@@ -22,6 +22,7 @@ import {
   SectionHighlight
 } from "@/components/ui/PremiumUI";
 import AISupportAgent from "@/components/support/AISupportAgent";
+import { RegulatoryDisclaimer } from "@/components/compliance/RegulatoryDisclaimer";
 
 export default function Home() {
   const [stats, setStats] = React.useState({
@@ -249,6 +250,7 @@ export default function Home() {
             <p className="text-text-muted max-w-sm mb-8 leading-relaxed">
               The premium institutional framework for WealthTech in India. Verifying the past to secure your future.
             </p>
+            <RegulatoryDisclaimer type="platform" className="mb-8" />
           </div>
 
           <div>

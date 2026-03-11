@@ -85,6 +85,36 @@ export class PerformanceAnalyticsService {
             }
         });
 
-        console.log(`[PerformanceAnalyticsService] Updated stats for Advisor ${advisorId}. WinRate: ${winRate.toFixed(2)}%, PF: ${profitFactor.toFixed(2)}`);
+        // Update Automated Badge Assignment
+        let badgeLevel = 'UNVERIFIED';
+        if (totalTrades >= 50 && winRate >= 75 && maxDrawdown <= 5 && profitFactor >= 2.0) {
+            badgeLevel = 'PLATINUM';
+        } else if (totalTrades >= 25 && winRate >= 70 && maxDrawdown <= 10) {
+            badgeLevel = 'GOLD';
+        } else if (totalTrades >= 10 && winRate >= 60 && maxDrawdown <= 15) {
+            badgeLevel = 'SILVER';
+        }
+
+        await prisma.advisorVerificationBadge.upsert({
+            where: { advisorId },
+            update: {
+                badgeLevel,
+                totalTradeCount: totalTrades,
+                verifiedTradeCount: winningTrades,
+                verificationPct: winRate,
+                lastVerifiedAt: new Date(),
+                updatedAt: new Date()
+            },
+            create: {
+                advisorId,
+                badgeLevel,
+                totalTradeCount: totalTrades,
+                verifiedTradeCount: winningTrades,
+                verificationPct: winRate,
+                lastVerifiedAt: new Date()
+            }
+        });
+
+        console.log(`[PerformanceAnalyticsService] Updated stats & badge (${badgeLevel}) for Advisor ${advisorId}. WinRate: ${winRate.toFixed(2)}%`);
     }
 }

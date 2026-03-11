@@ -32,14 +32,34 @@ export async function POST(req: Request) {
 
         return response;
     } catch (error: any) {
-        if (error.message === 'Missing email or password') {
-            return NextResponse.json({ error: error.message }, { status: 400 });
-        }
-        if (error.message === 'Invalid credentials') {
-            return NextResponse.json({ error: error.message }, { status: 401 });
+        console.error('[API_AUTH_LOGIN_ERROR]', {
+            message: error.message,
+            stack: error.stack,
+            cause: error.cause
+        });
+
+        // Pass through specific error status codes if available in the error object
+        // Or determine status based on common error messages
+        let status = 500;
+        let errorMessage = 'Internal server error';
+
+        if (error.message.includes('Missing email or password')) {
+            status = 400;
+            errorMessage = error.message;
+        } else if (error.message.includes('Invalid credentials') || error.message.includes('Invalid 2FA code')) {
+            status = 401;
+            errorMessage = error.message;
+        } else if (error.message.includes('Rate limit exceeded')) {
+            status = 429;
+            errorMessage = error.message;
+        } else {
+            // General "Login failed" or other backend-provided messages
+            errorMessage = error.message || 'Authentication failed';
         }
 
-        console.error('Login Error:', error);
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+        return NextResponse.json({
+            error: errorMessage,
+            debug: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        }, { status });
     }
 }

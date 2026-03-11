@@ -19,6 +19,7 @@ export class AuthService {
         sebiRegNo?: string;
         yearsOfExperience?: string;
         mandateScale?: string;
+        referralCode?: string;
     }) {
         const { name, email, password, role, sebiRegNo } = data;
         if (!name || !email || !role) throw new Error("Missing required fields");
@@ -81,6 +82,14 @@ export class AuthService {
 
         // Dispatch Welcome Email asynchronously
         EmailService.sendWelcomeEmail(email, name).catch(console.error);
+
+        // Process Referral attribution
+        if (data.referralCode) {
+            import('./GrowthService.js').then(m => m.GrowthService.processReferral(outcome.id, data.referralCode!));
+        }
+
+        // Log Join Activity
+        import('./GrowthService.js').then(m => m.GrowthService.logActivity(outcome.id, 'JOINED', `${name} joined the NeuraTrade ecosystem!`));
 
         return { userId: outcome.id, role: outcome.role };
     }
