@@ -22,7 +22,7 @@ async function testPhase5() {
         });
 
         const adminLogin = await axios.post(`${BASE_URL}/auth/login`, {
-            email: 'admin@neuratrade.in',
+            email: 'admin@neuratrade.com',
             password: 'password123'
         });
         const adminToken = adminLogin.data.token;
